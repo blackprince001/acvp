@@ -1,0 +1,49 @@
+[project]
+name = "aai-computer-vision-project"
+version = "0.1.0"
+description = "Real-time traffic density estimation using computer vision"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    # Computer Vision
+    "ultralytics>=8.2.0",
+    "opencv-python>=4.9.0",
+    "pillow>=10.0.0",
+
+    # Deep Learning
+    "torch>=2.1.0",
+    "torchvision>=0.16.0",
+
+    # Data Processing
+    "numpy>=1.26.0",
+    "pandas>=2.1.0",
+    "pyarrow>=14.0.0",
+    "roboflow>=1.1.0",
+
+    # Experiment Tracking
+    "tensorboard>=2.15.0",
+    "wandb>=0.16.0",
+
+    # Configuration
+    "pyyaml>=6.0.1",
+
+    # Visualization
+    "matplotlib>=3.8.0",
+    "seaborn>=0.13.0",
+
+    # Utilities
+    "tqdm>=4.66.0",
+    "rich>=13.7.0",
+    "loguru>=0.7.0",
+
+    # Model Optimization
+    "onnx>=1.15.0",
+    "onnxruntime>=1.16.0",
+
+    # Testing
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0"
+]
+
+[project.optional-dependencies]
+dev = ["ruff", "mypy", "pre-commit"]
