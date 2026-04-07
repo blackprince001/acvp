@@ -17,21 +17,21 @@
 
 | ID | Task | Priority | Dependencies | Effort | Acceptance Criteria |
 |----|------|----------|-------------|--------|-------------------|
-| T-001 | [ ] Update `pyproject.toml` with all core dependencies | P0 | None | 30min | All dependencies from SPEC Section 15 listed correctly |
-| T-002 | [ ] Update `.gitignore` for ML project artifacts | P0 | T-001 | 15min | Ignores checkpoints, logs, data, .env, IDE files |
-| T-003 | [ ] Create directory structure per SPEC Section 2 | P0 | None | 30min | All directories from spec exist |
-| T-004 | [ ] Create `__init__.py` files in all `src/` subpackages | P0 | T-003 | 15min | All packages importable |
-| T-005 | [ ] Implement `src/utils/config.py` — YAML config loader with validation | P0 | T-004 | 2h | Loads YAML, merges with base, validates required fields, supports CLI overrides |
-| T-006 | [ ] Implement `src/utils/logging.py` — Logging setup with loguru | P0 | T-004 | 30min | Configurable log levels, file + console output |
-| T-007 | [ ] Implement `src/utils/types.py` — Shared type definitions and dataclasses | P0 | T-004 | 1h | DetectionResult, TrackingResult, FilteredResult, PredictionResult dataclasses defined |
-| T-008 | [ ] Create base `configs/base.yaml` with all default values | P0 | T-005 | 1h | All default values from spec sections present and valid |
-| T-009 | [ ] Create model config files under `configs/models/detection/` | P1 | T-008 | 1h | YAML files for yolov8n/s/m/l and yolov11n/s/m/l |
-| T-010 | [ ] Create model config files under `configs/models/segmentation/` | P1 | T-008 | 1h | YAML files for yolov8n-seg/s-seg and yolov11n-seg/s-seg |
-| T-011 | [ ] Create model config files under `configs/models/ml_estimator/` | P1 | T-008 | 1h | YAML files for lstm, gru, tcn |
-| T-012 | [ ] Create tracker config files under `configs/tracking/` | P1 | T-008 | 30min | YAML files for botsort and bytetrack |
-| T-013 | [ ] Create experiment config files under `configs/experiments/` | P1 | T-009, T-010, T-011, T-012 | 1h | baseline_detection, baseline_segmentation, predictive_lstm/gru/tcn, edge_deployment |
-| T-014 | [ ] Set up pytest configuration (`pytest.ini` or `pyproject.toml` section) | P2 | T-003 | 15min | `pytest tests/` runs successfully (even with no tests yet) |
-| T-015 | [ ] Create placeholder `main.py` with CLI argument parsing | P1 | T-005, T-006 | 1h | `python main.py --help` shows all available commands and options |
+| T-001 | [x] Update `pyproject.toml` with all core dependencies | P0 | None | 30min | All dependencies from SPEC Section 15 listed correctly |
+| T-002 | [x] Update `.gitignore` for ML project artifacts | P0 | T-001 | 15min | Ignores checkpoints, logs, data, .env, IDE files |
+| T-003 | [x] Create directory structure per SPEC Section 2 | P0 | None | 30min | All directories from spec exist |
+| T-004 | [x] Create `__init__.py` files in all `src/` subpackages | P0 | T-003 | 15min | All packages importable |
+| T-005 | [x] Implement `src/utils/config.py` — YAML config loader with validation | P0 | T-004 | 2h | Loads YAML, merges with base, validates required fields, supports CLI overrides |
+| T-006 | [x] Implement `src/utils/logging.py` — Logging setup with loguru | P0 | T-004 | 30min | Configurable log levels, file + console output |
+| T-007 | [x] Implement `src/utils/types.py` — Shared type definitions and dataclasses | P0 | T-004 | 1h | DetectionResult, TrackingResult, FilteredResult, PredictionResult dataclasses defined |
+| T-008 | [x] Create base `configs/base.yaml` with all default values | P0 | T-005 | 1h | All default values from spec sections present and valid |
+| T-009 | [x] Create model config files under `configs/models/detection/` | P1 | T-008 | 1h | YAML files for yolov8n/s/m/l and yolov11n/s/m/l |
+| T-010 | [x] Create model config files under `configs/models/segmentation/` | P1 | T-008 | 1h | YAML files for yolov8n-seg/s-seg and yolov11n-seg/s-seg |
+| T-011 | [x] Create model config files under `configs/models/ml_estimator/` | P1 | T-008 | 1h | YAML files for lstm, gru, tcn |
+| T-012 | [x] Create tracker config files under `configs/tracking/` | P1 | T-008 | 30min | YAML files for botsort and bytetrack |
+| T-013 | [x] Create experiment config files under `configs/experiments/` | P1 | T-009, T-010, T-011, T-012 | 1h | baseline_detection, baseline_segmentation, predictive_lstm/gru/tcn, edge_deployment |
+| T-014 | [x] Set up pytest configuration (`pytest.ini` or `pyproject.toml` section) | P2 | T-003 | 15min | `pytest tests/` runs successfully (even with no tests yet) |
+| T-015 | [x] Create placeholder `main.py` with CLI argument parsing | P1 | T-005, T-006 | 1h | `python main.py --help` shows all available commands and options |
 
 ---
 
