@@ -1,0 +1,5 @@
+mode: detect
+model:
+  name: yolov8n
+tracking:
+  tracker_type: botsort

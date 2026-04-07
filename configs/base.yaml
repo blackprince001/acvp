@@ -1,0 +1,9 @@
+mode: detect
+target_fps: 30
+density_window_size: 30
+project_dir: .
+data_dir: data
+experiment_dir: experiments
+device: cuda
+logging:
+  level: INFO

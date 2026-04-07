@@ -1,0 +1,24 @@
+model:
+  name: yolov8s
+  task: segment
+  pretrained: true
+  pretrained_weights: yolov8s-seg.pt
+training:
+  epochs: 100
+  batch_size: 16
+  image_size: 640
+  optimizer: AdamW
+  lr: 0.001
+  lr_scheduler: cosine
+  warmup_epochs: 5
+  weight_decay: 0.0005
+  patience: 20
+  augmentations:
+    brightness: 0.3
+    contrast: 0.3
+    blur: 0.1
+    rotation: 5
+    flip_lr: 0.5
+  classes:
+  - road
+  - vehicle

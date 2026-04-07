@@ -1,0 +1,20 @@
+model:
+  name: tcn
+  input_size: 10
+  num_channels:
+  - 64
+  - 64
+  - 64
+  - 64
+  kernel_size: 3
+  dropout: 0.2
+  dilation_base: 2
+training:
+  epochs: 200
+  batch_size: 64
+  optimizer: Adam
+  lr: 0.001
+  lr_scheduler: reduce_on_plateau
+  patience: 30
+  loss: mse
+  clip_grad_norm: 1.0

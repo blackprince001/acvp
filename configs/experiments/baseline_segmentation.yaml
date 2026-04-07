@@ -1,0 +1,5 @@
+mode: segment
+model:
+  name: yolov8n-seg
+tracking:
+  tracker_type: botsort

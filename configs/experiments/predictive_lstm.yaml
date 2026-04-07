@@ -1,0 +1,7 @@
+mode: predict
+model:
+  name: yolov8s-seg
+estimator:
+  name: lstm
+tracking:
+  tracker_type: botsort

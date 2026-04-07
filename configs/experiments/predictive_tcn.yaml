@@ -1,0 +1,7 @@
+mode: predict
+model:
+  name: yolov8s-seg
+estimator:
+  name: tcn
+tracking:
+  tracker_type: botsort

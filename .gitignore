@@ -8,3 +8,14 @@ wheels/
 
 # Virtual environments
 .venv
+
+# ML Project Artifacts
+experiments/logs/
+experiments/checkpoints/
+data/
+!.gitkeep
+# (Keep metadata and splits if desired, but typically raw data and processed images are ignored)
+.env
+.ipynb_checkpoints/
+.vscode/
+.idea/
