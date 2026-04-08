@@ -33,8 +33,8 @@ The system implements a **two-stage pipeline** architecture:
 │                                                                  │
 │  ┌──────────┐    ┌──────────┐    ┌──────────────────────────┐   │
 │  │  YOLO    │───▶│ Tracking │───▶│   Spatial Logic Layer    │   │
-│  │  (Det/   │    │ (BoT-    │    │   (Road Mask + IoU       │   │
-│  │  Seg)    │    │  SORT/   │    │    Filtering)            │   │
+│  │Detection │    │ (BoT-    │    │   (Box-Road IoU +       │  │
+│  │          │    │  SORT/   │    │    Pre-computed Mask)    │  │
 │  │          │    │  Byte)   │    │                          │   │
 │  └──────────┘    └──────────┘    └────────────┬─────────────┘   │
 │                                                │                 │
@@ -72,9 +72,8 @@ The system implements a **two-stage pipeline** architecture:
 | Component | Responsibility | Output |
 |-----------|---------------|--------|
 | YOLO Detection | Bounding box detection of vehicles and roads | Boxes, class IDs, confidence scores |
-| YOLO Segmentation | Instance segmentation of vehicles and roads | Masks, class IDs, confidence scores |
 | Tracking | Persistent ID assignment across frames | Tracked objects with IDs, trajectories |
-| Spatial Logic | Filter on-road vs off-road vehicles | Filtered vehicle list, occupancy data |
+| Spatial Logic | Filter on-road vs off-road vehicles using box-road IoU + pre-computed road mask | Filtered vehicle list, occupancy data |
 | Feature Engineering | Compute density features per N-frame window | Feature vectors per window |
 | ML Estimator | Predict future density states | N-step ahead predictions |
 | Inference Orchestrator | Coordinate all components at fixed FPS | Unified density stream |
@@ -83,24 +82,23 @@ The system implements a **two-stage pipeline** architecture:
 ### 1.3 Data Flow
 
 ```
-Raw Video ──▶ Preprocessed Frames ──▶ YOLO Inference ──▶ Tracking
+Raw Video ──▶ Preprocessed Frames ──▶ YOLO Detection ──▶ Tracking
                                                           │
                                                           ▼
-Road Masks ──▶ Spatial Logic ──▶ Filtered Vehicles ──▶ Feature Engineering
-               (per N-frame window)                          │
-                                                             ▼
-                                                     ML Estimator Input
-                                                             │
-                                                             ▼
-                                                     Density Predictions
+Pre-computed  ──▶ Spatial Logic ──▶ Filtered Vehicles ──▶ Feature Engineering
+Road Mask          (box-road IoU)                           │
+                                                            ▼
+                                                   ML Estimator Input
+                                                            │
+                                                            ▼
+                                                   Density Predictions
 ```
 
 ### 1.4 Execution Modes
 
 | Mode | Components Active | Use Case |
 |------|------------------|----------|
-| `detect` | YOLO Detection + Tracking | Baseline, edge deployment |
-| `segment` | YOLO Segmentation + Tracking + Spatial Logic | High-precision mode |
+| `detect` | YOLO Detection + Tracking + Spatial Logic | Standard mode for real-time density estimation |
 | `predict` | Full Stage 1 + ML Estimator | Predictive mode |
 | `benchmark` | All components + Evaluation | Experimentation |
 
@@ -126,11 +124,6 @@ aai-computer-vision-project/
 │   │   │   ├── yolov11s.yaml
 │   │   │   ├── yolov11m.yaml
 │   │   │   └── yolov11l.yaml
-│   │   ├── segmentation/
-│   │   │   ├── yolov8n-seg.yaml
-│   │   │   ├── yolov8s-seg.yaml
-│   │   │   ├── yolov11n-seg.yaml
-│   │   │   └── yolov11s-seg.yaml
 │   │   └── ml_estimator/
 │   │       ├── lstm.yaml
 │   │       ├── gru.yaml
@@ -140,7 +133,6 @@ aai-computer-vision-project/
 │   │   └── bytetrack.yaml
 │   └── experiments/
 │       ├── baseline_detection.yaml
-│       ├── baseline_segmentation.yaml
 │       ├── predictive_lstm.yaml
 │       ├── predictive_gru.yaml
 │       ├── predictive_tcn.yaml
@@ -190,11 +182,6 @@ aai-computer-vision-project/
 │   │   │   ├── yolov8.py              # YOLOv8 detection wrapper
 │   │   │   ├── yolov11.py             # YOLO11 detection wrapper
 │   │   │   └── registry.py            # Model registry for config-based loading
-│   │   ├── segmentation/
-│   │   │   ├── __init__.py
-│   │   │   ├── base.py                 # Base segmentation model interface
-│   │   │   ├── yolov8_seg.py          # YOLOv8 segmentation wrapper
-│   │   │   └── yolov11_seg.py         # YOLO11 segmentation wrapper
 │   │   └── ml_estimator/
 │   │       ├── __init__.py
 │   │       ├── base.py                 # Base estimator interface
@@ -254,11 +241,10 @@ aai-computer-vision-project/
 │   ├── 01_preprocess_data.py
 │   ├── 02_run_roboflow_segmentation.py
 │   ├── 03_train_detection.py
-│   ├── 04_train_segmentation.py
-│   ├── 05_train_ml_estimator.py
-│   ├── 06_run_inference.py
-│   ├── 07_evaluate.py
-│   └── 08_export_models.py
+│   ├── 04_train_ml_estimator.py
+│   ├── 05_run_inference.py
+│   ├── 06_evaluate.py
+│   └── 07_export_models.py
 │
 ├── experiments/                        # Experiment artifacts
 │   ├── logs/                           # Training logs
@@ -266,7 +252,6 @@ aai-computer-vision-project/
 │   │   └── wandb/
 │   ├── checkpoints/                    # Saved model weights
 │   │   ├── detection/
-│   │   ├── segmentation/
 │   │   └── ml_estimator/
 │   └── results/                        # Evaluation results
 │       ├── benchmarks/
@@ -281,7 +266,6 @@ aai-computer-vision-project/
 │   │   └── test_dataset.py
 │   ├── test_models/
 │   │   ├── test_detection.py
-│   │   ├── test_segmentation.py
 │   │   └── test_ml_estimator.py
 │   ├── test_tracking/
 │   │   └── test_tracker.py
@@ -514,35 +498,19 @@ class YOLOv8Detector:
         ...
 ```
 
-### 4.2 Segmentation Models
+### 4.2 Segmentation at Inference (Not Required)
 
-**Purpose:** YOLO segmentation models produce pixel-exact masks for vehicles and roads. This enables the Spatial Logic Layer to compute precise mask-road overlap, filtering out parked cars, sidewalk vehicles, and other off-road noise that bounding boxes would incorrectly include. This is the high-accuracy density estimation path.
-**Models to Train:**
+**Note:** We do NOT train separate YOLO segmentation models. Instead:
 
-| Model | Size | Parameters | Target FPS |
-|-------|------|-----------|------------|
-| YOLOv8n-seg | 640 | 3.4M | ~150 |
-| YOLOv8s-seg | 640 | 11.8M | ~90 |
-| YOLO11n-seg | 640 | 2.8M | ~160 |
-| YOLO11s-seg | 640 | 10.1M | ~95 |
-**Training Configuration:** Same structure as detection, with `task: "segment"`.
-**Segmentation Model Wrapper** (`src/models/segmentation/yolov8_seg.py`):
+1. **Roboflow provides pre-computed road masks** — From the data ingestion phase, we have pixel-level road segmentation already generated via Roboflow API
+2. **Detection model + pre-computed road mask** — The trained detection model finds vehicles at runtime, the Spatial Logic Layer filters using box-road IoU against the pre-computed road mask
+3. **Why no segmentation training** — The segmentation is done once at data ingestion time (Section 3.3), not at model training or inference time
 
-```python
-class YOLOv8Segmenter:
-    def __init__(self, model_size: str = "s", pretrained: bool = True,
-                 device: str = "cuda"):
-        ...
-    def train(self, data_config: dict, epochs: int = 100, **kwargs):
-        ...
-    def predict(self, image: np.ndarray, conf_threshold: float = 0.25) -> dict:
-        """Returns {boxes, confidences, class_ids, masks}."""
-        ...
-```
+This approach is faster and uses less GPU memory — suitable for real-time density estimation.
 
 ### 4.3 Training Infrastructure
 
-**Training Script** (`scripts/03_train_detection.py`, `scripts/04_train_segmentation.py`):
+**Training Script** (`scripts/03_train_detection.py`):
 
 - Loads config from YAML
 - Initializes dataset with augmentations
@@ -1022,7 +990,7 @@ class TCNEstimator(nn.Module):
 
 ### 8.5 Training Loop
 
-**Training Script** (`scripts/05_train_ml_estimator.py`):
+**Training Script** (`scripts/04_train_ml_estimator.py`):
 
 ```python
 def train_model(model: nn.Module, train_loader: DataLoader,
@@ -1438,10 +1406,6 @@ base.yaml (defaults)
     ├── models/detection/yolov8s.yaml
     │       │
     │       └── experiments/baseline_detection.yaml
-    │
-    ├── models/segmentation/yolov11s-seg.yaml
-    │       │
-    │       └── experiments/baseline_segmentation.yaml
     │
     └── models/ml_estimator/lstm.yaml
             │

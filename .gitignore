@@ -19,3 +19,8 @@ data/
 .ipynb_checkpoints/
 .vscode/
 .idea/
+
+.coverage
+
+.pytest_cache
+.ruff_cache
