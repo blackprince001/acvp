@@ -84,11 +84,11 @@
 
 | ID | Task | Priority | Dependencies | Effort | Acceptance Criteria |
 |----|------|----------|-------------|--------|-------------------|
-| T-045 | [ ] Implement `src/tracking/base.py` — Base tracker interface | P0 | T-004, T-007 | 1h | Abstract class with update(), get_trajectories() methods |
-| T-046 | [ ] Implement `src/tracking/ultralytics_tracker.py` — Ultralytics tracking wrapper | P0 | T-045 | 2h | Wraps BoT-SORT and ByteTrack, returns tracked objects with IDs, supports both modes |
-| T-047 | [ ] Implement movement vector calculation | P1 | T-046 | 2h | Computes velocity (m/s), direction (degrees), acceleration from tracked centroids |
-| T-048 | [ ] Implement redundant counting prevention logic | P1 | T-046 | 1h | Zone-based counting, unique ID tracking per zone crossing |
-| T-049 | [ ] Write unit tests for tracker | P2 | T-046, T-047, T-014 | 1h | Tests ID persistence, trajectory retrieval, movement vector computation |
+| T-045 | [x] Implement `src/tracking/base.py` — Base tracker interface | P0 | T-004, T-007 | 1h | Abstract class with update(), get_trajectories() methods |
+| T-046 | [x] Implement `src/tracking/ultralytics_tracker.py` — Ultralytics tracking wrapper | P0 | T-045 | 2h | Wraps BoT-SORT and ByteTrack, returns tracked objects with IDs, supports both modes |
+| T-047 | [x] Implement movement vector calculation | P1 | T-046 | 2h | Computes velocity (m/s), direction (degrees), acceleration from tracked centroids |
+| T-048 | [x] Implement redundant counting prevention logic | P1 | T-046 | 1h | Zone-based counting, unique ID tracking per zone crossing |
+| T-049 | [x] Write unit tests for tracker | P2 | T-046, T-047, T-014 | 1h | Tests ID persistence, trajectory retrieval, movement vector computation |
 
 ---
 
