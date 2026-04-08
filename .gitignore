@@ -10,17 +10,30 @@ wheels/
 .venv
 
 # ML Project Artifacts
-experiments/logs/
-experiments/checkpoints/
+experiments/
 data/
 !.gitkeep
-# (Keep metadata and splits if desired, but typically raw data and processed images are ignored)
 .env
 .ipynb_checkpoints/
+
+# Editor
 .vscode/
 .idea/
 
-.coverage
+# Model weight files (downloaded by Ultralytics / exported)
+*.pt
+*.onnx
+*.engine
+*.tflite
 
+# Ultralytics / YOLO run artefacts
+runs/
+
+# Test & lint caches
+.coverage
 .pytest_cache
 .ruff_cache
+
+# Logs
+*.log
+train.log
