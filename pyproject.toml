@@ -24,6 +24,7 @@ dependencies = [
     "loguru>=0.7.0",
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
+    "inference-sdk>=1.2.1",
 ]
 
 [project.optional-dependencies]

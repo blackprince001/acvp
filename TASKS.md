@@ -61,11 +61,11 @@
 
 | ID | Task | Priority | Dependencies | Effort | Acceptance Criteria |
 |----|------|----------|-------------|--------|-------------------|
-| T-031 | [ ] Implement `src/models/detection/base.py` — Base detection interface | P0 | T-004, T-007 | 1h | Abstract class with train(), predict(), export_onnx() methods |
-| T-032 | [ ] Implement `src/models/detection/yolov8.py` — YOLOv8 detection wrapper | P0 | T-031, T-020 | 2h | Wraps Ultralytics YOLOv8, supports train/predict/export, loads from config |
-| T-033 | [ ] Implement `src/models/detection/yolov11.py` — YOLO11 detection wrapper | P0 | T-031, T-020 | 2h | Wraps Ultralytics YOLO11, supports train/predict/export, loads from config |
-| T-034 | [ ] Implement `src/models/detection/registry.py` — Model registry | P1 | T-032, T-033 | 1h | Config-based model loading: `registry.get_model("yolov8s")` returns correct model |
-| T-035 | [ ] Create `scripts/03_train_detection.py` — Detection training entry point | P0 | T-032, T-033, T-034 | 2h | Loads config, trains model, saves checkpoints, logs to TensorBoard+W&B |
+| T-031 | [x] Implement `src/models/detection/base.py` — Base detection interface | P0 | T-004, T-007 | 1h | Abstract class with train(), predict(), export_onnx() methods |
+| T-032 | [x] Implement `src/models/detection/yolov8.py` — YOLOv8 detection wrapper | P0 | T-031, T-020 | 2h | Wraps Ultralytics YOLOv8, supports train/predict/export, loads from config |
+| T-033 | [x] Implement `src/models/detection/yolov11.py` — YOLO11 detection wrapper | P0 | T-031, T-020 | 2h | Wraps Ultralytics YOLO11, supports train/predict/export, loads from config |
+| T-034 | [x] Implement `src/models/detection/registry.py` — Model registry | P1 | T-032, T-033 | 1h | Config-based model loading: `registry.get_model("yolov8s")` returns correct model |
+| T-035 | [x] Create `scripts/03_train_detection.py` — Detection training entry point | P0 | T-032, T-033, T-034 | 2h | Loads config, trains model, saves checkpoints, logs to TensorBoard+W&B |
 | T-036 | [ ] Train YOLOv8n detection model | P1 | T-027, T-035 | 2-4h | Model trained, checkpoint saved, metrics logged |
 | T-037 | [ ] Train YOLOv8s detection model | P1 | T-027, T-035 | 2-4h | Model trained, checkpoint saved, metrics logged |
 | T-038 | [ ] Train YOLOv8m detection model | P2 | T-027, T-035 | 4-6h | Model trained, checkpoint saved, metrics logged |
@@ -74,7 +74,7 @@
 | T-041 | [ ] Train YOLO11s detection model | P1 | T-027, T-035 | 2-4h | Model trained, checkpoint saved, metrics logged |
 | T-042 | [ ] Train YOLO11m detection model | P2 | T-027, T-035 | 4-6h | Model trained, checkpoint saved, metrics logged |
 | T-043 | [ ] Train YOLO11l detection model | P2 | T-027, T-035 | 4-6h | Model trained, checkpoint saved, metrics logged |
-| T-044 | [ ] Write unit tests for detection models | P2 | T-032, T-033, T-014 | 1h | Tests forward pass, output shapes, config loading |
+| T-044 | [x] Write unit tests for detection models | P2 | T-032, T-033, T-014 | 1h | Tests forward pass, output shapes, config loading |
 
 ---
 
