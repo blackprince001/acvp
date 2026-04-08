@@ -8,8 +8,8 @@ from .yolo import YOLODetectionModel
 
 
 class YOLO11DetectionModel(YOLODetectionModel):
-    """YOLO11 family detection wrapper (yolo11n/s/m/l/x).
+  """YOLO11 family detection wrapper (yolo11n/s/m/l/x).
 
-    Inherits all functionality from :class:`YOLODetectionModel`.
-    See that class for full documentation.
-    """
+  Inherits all functionality from :class:`YOLODetectionModel`.
+  See that class for full documentation.
+  """

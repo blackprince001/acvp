@@ -13,114 +13,110 @@ import numpy as np
 
 
 class BaseDetectionModel(ABC):
-    """Abstract base class defining the detection model interface.
+  """Abstract base class defining the detection model interface.
+
+  Args:
+      config: Model configuration dict (typically loaded from a YAML config).
+      device: Compute device string, e.g. ``"cuda"`` or ``"cpu"``.
+  """
+
+  def __init__(self, config: dict, device: str = "cuda") -> None:
+    self.config = config
+    self.device = device
+    self.model = None  # Underlying framework model, set in subclass
+
+  @abstractmethod
+  def train(
+    self,
+    data_yaml: str | Path,
+    output_dir: str | Path,
+    **kwargs: Any,
+  ) -> dict:
+    """Fine-tune the model on the provided dataset.
 
     Args:
-        config: Model configuration dict (typically loaded from a YAML config).
-        device: Compute device string, e.g. ``"cuda"`` or ``"cpu"``.
+        data_yaml: Path to a YOLO-format ``data.yaml`` describing the
+            dataset (train/val/test split paths and class names).
+        output_dir: Directory where checkpoints and logs are saved.
+        **kwargs: Additional training overrides forwarded to the framework
+            trainer (e.g. ``epochs``, ``batch``).
+
+    Returns:
+        A ``dict`` containing at minimum ``{"best_checkpoint": Path, "metrics": dict}``.
     """
+    ...
 
-    def __init__(self, config: dict, device: str = "cuda") -> None:
-        self.config = config
-        self.device = device
-        self.model = None  # Underlying framework model, set in subclass
+  @abstractmethod
+  def predict(
+    self,
+    source: str | Path | np.ndarray,
+    conf: float = 0.25,
+    iou: float = 0.45,
+    **kwargs: Any,
+  ) -> list[dict]:
+    """Run inference on *source*.
 
-    @abstractmethod
-    def train(
-        self,
-        data_yaml: str | Path,
-        output_dir: str | Path,
-        **kwargs: Any,
-    ) -> dict:
-        """Fine-tune the model on the provided dataset.
+    Args:
+        source: A file path, directory, URL, or raw NumPy image array.
+        conf: Confidence threshold for detections.
+        iou: NMS IoU threshold.
+        **kwargs: Additional inference parameters.
 
-        Args:
-            data_yaml: Path to a YOLO-format ``data.yaml`` describing the
-                dataset (train/val/test split paths and class names).
-            output_dir: Directory where checkpoints and logs are saved.
-            **kwargs: Additional training overrides forwarded to the framework
-                trainer (e.g. ``epochs``, ``batch``).
+    Returns:
+        A list of per-image result dicts with keys:
+        ``{"boxes": np.ndarray, "scores": np.ndarray, "class_ids": np.ndarray}``.
+    """
+    ...
 
-        Returns:
-            A ``dict`` containing at minimum ``{"best_checkpoint": Path, "metrics": dict}``.
-        """
-        ...
+  @abstractmethod
+  def export_onnx(
+    self,
+    output_path: str | Path,
+    image_size: int = 640,
+    dynamic: bool = True,
+    **kwargs: Any,
+  ) -> Path:
+    """Export the model to ONNX format.
 
-    @abstractmethod
-    def predict(
-        self,
-        source: str | Path | np.ndarray,
-        conf: float = 0.25,
-        iou: float = 0.45,
-        **kwargs: Any,
-    ) -> list[dict]:
-        """Run inference on *source*.
+    Args:
+        output_path: Destination ``.onnx`` file path.
+        image_size: Input resolution used for export.
+        dynamic: Whether to use dynamic batch/resolution axes.
+        **kwargs: Additional export parameters.
 
-        Args:
-            source: A file path, directory, URL, or raw NumPy image array.
-            conf: Confidence threshold for detections.
-            iou: NMS IoU threshold.
-            **kwargs: Additional inference parameters.
+    Returns:
+        Resolved path of the exported ``.onnx`` file.
+    """
+    ...
 
-        Returns:
-            A list of per-image result dicts with keys:
-            ``{"boxes": np.ndarray, "scores": np.ndarray, "class_ids": np.ndarray}``.
-        """
-        ...
+  @abstractmethod
+  def load_checkpoint(self, checkpoint_path: str | Path) -> None:
+    """Load model weights from a saved checkpoint.
 
-    @abstractmethod
-    def export_onnx(
-        self,
-        output_path: str | Path,
-        image_size: int = 640,
-        dynamic: bool = True,
-        **kwargs: Any,
-    ) -> Path:
-        """Export the model to ONNX format.
+    Args:
+        checkpoint_path: Path to a ``.pt`` checkpoint file.
+    """
+    ...
 
-        Args:
-            output_path: Destination ``.onnx`` file path.
-            image_size: Input resolution used for export.
-            dynamic: Whether to use dynamic batch/resolution axes.
-            **kwargs: Additional export parameters.
+  def _training_params(self, overrides: dict | None = None) -> dict:
+    """Merge config training params with any caller-supplied overrides.
 
-        Returns:
-            Resolved path of the exported ``.onnx`` file.
-        """
-        ...
+    Args:
+        overrides: Optional dict of override values.
 
-    @abstractmethod
-    def load_checkpoint(self, checkpoint_path: str | Path) -> None:
-        """Load model weights from a saved checkpoint.
+    Returns:
+        Merged training parameter dict.
+    """
+    params = dict(self.config.get("training", {}))
+    if overrides:
+      params.update(overrides)
+    return params
 
-        Args:
-            checkpoint_path: Path to a ``.pt`` checkpoint file.
-        """
-        ...
-
-    # ------------------------------------------------------------------
-    # Shared helpers
-    # ------------------------------------------------------------------
-
-    def _training_params(self, overrides: dict | None = None) -> dict:
-        """Merge config training params with any caller-supplied overrides.
-
-        Args:
-            overrides: Optional dict of override values.
-
-        Returns:
-            Merged training parameter dict.
-        """
-        params = dict(self.config.get("training", {}))
-        if overrides:
-            params.update(overrides)
-        return params
-
-    def __repr__(self) -> str:
-        # Config may have "name" at top level (flattened) or nested under "model"
-        name = (
-            self.config.get("name")
-            or self.config.get("model", {}).get("name")
-            or self.__class__.__name__
-        )
-        return f"{self.__class__.__name__}(model={name!r}, device={self.device!r})"
+  def __repr__(self) -> str:
+    # Config may have "name" at top level (flattened) or nested under "model"
+    name = (
+      self.config.get("name")
+      or self.config.get("model", {}).get("name")
+      or self.__class__.__name__
+    )
+    return f"{self.__class__.__name__}(model={name!r}, device={self.device!r})"

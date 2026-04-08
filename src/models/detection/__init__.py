@@ -11,14 +11,14 @@ from .yolov10 import YOLOv10DetectionModel
 from .yolov11 import YOLO11DetectionModel
 
 __all__ = [
-    "BaseDetectionModel",
-    "YOLODetectionModel",
-    "YOLOv5DetectionModel",
-    "YOLOv8DetectionModel",
-    "YOLOv9DetectionModel",
-    "YOLOv10DetectionModel",
-    "YOLO11DetectionModel",
-    "RTDETRDetectionModel",
-    "get_model",
-    "list_models",
+  "BaseDetectionModel",
+  "YOLODetectionModel",
+  "YOLOv5DetectionModel",
+  "YOLOv8DetectionModel",
+  "YOLOv9DetectionModel",
+  "YOLOv10DetectionModel",
+  "YOLO11DetectionModel",
+  "RTDETRDetectionModel",
+  "get_model",
+  "list_models",
 ]

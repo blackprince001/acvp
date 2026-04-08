@@ -39,18 +39,11 @@ from pathlib import Path
 import yaml
 from loguru import logger
 
-# ----------------------------------------------------------------------------
-# Make the project root importable when running as a script
-# ----------------------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
   sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.models.detection.registry import get_model  # noqa: E402
-
-# ----------------------------------------------------------------------------
-# Constants
-# ----------------------------------------------------------------------------
 
 DATA_SEGMENTED = PROJECT_ROOT / "data" / "segmented"
 DATA_SPLITS = PROJECT_ROOT / "data" / "splits"
@@ -99,11 +92,6 @@ ALL_MODELS = [
   "rtdetr-l",
   "rtdetr-x",
 ]
-
-
-# ----------------------------------------------------------------------------
-# Data preparation
-# ----------------------------------------------------------------------------
 
 
 def load_split(split_file: Path) -> set[str]:
@@ -262,11 +250,6 @@ def prepare_yolo_dataset(
   return data_yaml_path
 
 
-# ----------------------------------------------------------------------------
-# Training
-# ----------------------------------------------------------------------------
-
-
 def train_model(
   model_name: str,
   data_yaml: Path,
@@ -300,11 +283,6 @@ def train_model(
     f"[{model_name}] Done. Best checkpoint: {result.get('best_checkpoint')}"
   )
   return result
-
-
-# ----------------------------------------------------------------------------
-# CLI
-# ----------------------------------------------------------------------------
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -374,9 +352,6 @@ def main(argv: list[str] | None = None) -> None:
   log_file.parent.mkdir(parents=True, exist_ok=True)
   logger.add(log_file, level="DEBUG", rotation="10 MB")
 
-  # ------------------------------------------------------------------ #
-  # 1. Prepare YOLO-format dataset                                       #
-  # ------------------------------------------------------------------ #
   logger.info("=== Phase 1: Data Preparation ===")
   data_yaml = prepare_yolo_dataset(
     force=args.force_prepare,
@@ -387,9 +362,6 @@ def main(argv: list[str] | None = None) -> None:
     logger.info("--prepare-only flag set; skipping training.")
     return
 
-  # ------------------------------------------------------------------ #
-  # 2. Train model(s)                                                    #
-  # ------------------------------------------------------------------ #
   logger.info("=== Phase 2: Training ===")
 
   # Build overrides dict (only include keys the caller explicitly set)

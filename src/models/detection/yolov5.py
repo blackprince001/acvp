@@ -4,7 +4,7 @@ from .yolo import YOLODetectionModel
 
 
 class YOLOv5DetectionModel(YOLODetectionModel):
-    """YOLOv5 family detection wrapper (yolov5n/s/m/l/x).
+  """YOLOv5 family detection wrapper (yolov5n/s/m/l/x).
 
-    Inherits all functionality from :class:`YOLODetectionModel`.
-    """
+  Inherits all functionality from :class:`YOLODetectionModel`.
+  """
