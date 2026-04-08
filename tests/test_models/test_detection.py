@@ -75,8 +75,8 @@ def _yolo11_config() -> dict:
 
 
 def _load_train_script_module():
-    """Dynamically load 03_train_detection.py as a module."""
-    script_path = PROJECT_ROOT / "scripts" / "03_train_detection.py"
+    """Dynamically load train_detection.py as a module."""
+    script_path = PROJECT_ROOT / "scripts" / "train_detection.py"
     spec = importlib.util.spec_from_file_location("train_detection_script", script_path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
