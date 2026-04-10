@@ -4,7 +4,7 @@ model:
   pretrained: true
   pretrained_weights: yolov5l.pt
 training:
-  epochs: 50
+  epochs: 100
   batch_size: 16
   image_size: 640
   optimizer: AdamW
