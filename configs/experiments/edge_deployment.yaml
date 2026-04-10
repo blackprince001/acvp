@@ -1,4 +1,0 @@
-mode: detect
-model:
-  name: yolov11n
-target_fps: 30

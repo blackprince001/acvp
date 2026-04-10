@@ -4,7 +4,7 @@ model:
   pretrained: true
   pretrained_weights: yolov5x.pt
 training:
-  epochs: 100
+  epochs: 50
   batch_size: 16
   image_size: 640
   optimizer: AdamW
@@ -20,5 +20,5 @@ training:
     rotation: 5
     flip_lr: 0.5
   classes:
-  - road
-  - vehicles
+    - road
+    - vehicles
