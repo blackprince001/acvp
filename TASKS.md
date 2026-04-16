@@ -96,13 +96,13 @@
 
 | ID | Task | Priority | Dependencies | Effort | Acceptance Criteria |
 |----|------|----------|-------------|--------|-------------------|
-| T-050 | [ ] Implement `src/spatial_logic/road_mask.py` — Road mask manager | P0 | T-004, T-007 | 2h | Loads static road mask, generates from segmentation output, returns mask per frame |
-| T-051 | [ ] Implement `src/spatial_logic/intersection.py` — IoU-based overlap computation | P0 | T-050 | 2h | Mask-road IoU, box-road IoU, both return overlap ratio in [0, 1] |
-| T-052 | [ ] Implement `src/spatial_logic/filtering.py` — On-road classification | P0 | T-051 | 2h | Classifies vehicles as on-road/off-road based on overlap threshold + optional velocity filter |
-| T-053 | [ ] Implement `src/spatial_logic/occupancy.py` — Pixel occupancy computation | P0 | T-050 | 1h | Computes road pixel occupancy ratio from vehicle masks |
-| T-054 | [ ] Write unit tests for road_mask.py | P2 | T-050, T-014 | 1h | Tests mask loading, generation, merging |
-| T-055 | [ ] Write unit tests for intersection.py | P2 | T-051, T-014 | 1h | Tests IoU computation with known inputs, edge cases (empty masks, full overlap) |
-| T-056 | [ ] Write unit tests for filtering.py | P2 | T-052, T-014 | 1h | Tests on-road classification with synthetic tracked objects |
+| T-050 | [x] Implement `src/spatial_logic/road_mask.py` — Road mask manager | P0 | T-004, T-007 | 2h | Loads static road mask, generates from segmentation output, returns mask per frame |
+| T-051 | [x] Implement `src/spatial_logic/intersection.py` — IoU-based overlap computation | P0 | T-050 | 2h | Mask-road IoU, box-road IoU, both return overlap ratio in [0, 1] |
+| T-052 | [x] Implement `src/spatial_logic/filtering.py` — On-road classification | P0 | T-051 | 2h | Classifies vehicles as on-road/off-road based on overlap threshold + optional velocity filter |
+| T-053 | [x] Implement `src/spatial_logic/occupancy.py` — Pixel occupancy computation | P0 | T-050 | 1h | Computes road pixel occupancy ratio from vehicle masks |
+| T-054 | [x] Write unit tests for road_mask.py | P2 | T-050, T-014 | 1h | Tests mask loading, generation, merging |
+| T-055 | [x] Write unit tests for intersection.py | P2 | T-051, T-014 | 1h | Tests IoU computation with known inputs, edge cases (empty masks, full overlap) |
+| T-056 | [x] Write unit tests for filtering.py | P2 | T-052, T-014 | 1h | Tests on-road classification with synthetic tracked objects |
 
 ---
 
@@ -110,11 +110,11 @@
 
 | ID | Task | Priority | Dependencies | Effort | Acceptance Criteria |
 |----|------|----------|-------------|--------|-------------------|
-| T-057 | [ ] Implement `src/features/extractor.py` — Feature extraction from telemetry | P0 | T-048, T-052, T-053 | 2h | Extracts all 10 features per frame (counts, occupancy, velocity, direction, density, flow, congestion) |
-| T-058 | [ ] Implement `src/features/windowing.py` — Temporal window builder | P0 | T-057 | 1h | Creates sliding windows (input: T-N..T, output: T+1..T+H) with configurable stride |
-| T-059 | [ ] Implement `src/features/normalizer.py` — Feature normalization | P0 | T-057 | 1h | Supports standard, minmax, robust normalization; fit/transform/inverse_transform |
+| T-057 | [x] Implement `src/features/extractor.py` — Feature extraction from telemetry | P0 | T-048, T-052, T-053 | 2h | Extracts all 10 features per frame (counts, occupancy, velocity, direction, density, flow, congestion) |
+| T-058 | [x] Implement `src/features/windowing.py` — Temporal window builder | P0 | T-057 | 1h | Creates sliding windows (input: T-N..T, output: T+1..T+H) with configurable stride |
+| T-059 | [x] Implement `src/features/normalizer.py` — Feature normalization | P0 | T-057 | 1h | Supports standard, minmax, robust normalization; fit/transform/inverse_transform |
 | T-060 | [ ] Generate telemetry data from CV pipeline on test scenes | P1 | T-036, T-045, T-050, T-051, T-057 | 2h | CSV/Parquet files in `data/generated/` with all features computed |
-| T-061 | [ ] Write unit tests for feature extractor | P2 | T-057, T-014 | 1h | Tests feature computation with synthetic tracked objects |
+| T-061 | [x] Write unit tests for feature extractor | P2 | T-057, T-014 | 1h | Tests feature computation with synthetic tracked objects |
 
 ---
 
@@ -122,15 +122,15 @@
 
 | ID | Task | Priority | Dependencies | Effort | Acceptance Criteria |
 |----|------|----------|-------------|--------|-------------------|
-| T-062 | [ ] Implement `src/models/ml_estimator/base.py` — Base estimator interface | P0 | T-004 | 1h | Abstract class with forward() method, common training utilities |
-| T-063 | [ ] Implement `src/models/ml_estimator/lstm.py` — LSTM architecture | P0 | T-062 | 2h | Multi-layer LSTM with FC head, configurable hidden size, dropout, bidirectional |
-| T-064 | [ ] Implement `src/models/ml_estimator/gru.py` — GRU architecture | P0 | T-062 | 2h | Multi-layer GRU with FC head, configurable hidden size, dropout, bidirectional |
-| T-065 | [ ] Implement `src/models/ml_estimator/tcn.py` — TCN architecture | P0 | T-062 | 3h | Temporal blocks with residual connections, dilated convolutions, FC head |
+| T-062 | [x] Implement `src/models/ml_estimator/base.py` — Base estimator interface | P0 | T-004 | 1h | Abstract class with forward() method, common training utilities |
+| T-063 | [x] Implement `src/models/ml_estimator/lstm.py` — LSTM architecture | P0 | T-062 | 2h | Multi-layer LSTM with FC head, configurable hidden size, dropout, bidirectional |
+| T-064 | [x] Implement `src/models/ml_estimator/gru.py` — GRU architecture | P0 | T-062 | 2h | Multi-layer GRU with FC head, configurable hidden size, dropout, bidirectional |
+| T-065 | [x] Implement `src/models/ml_estimator/tcn.py` — TCN architecture | P0 | T-062 | 3h | Temporal blocks with residual connections, dilated convolutions, FC head |
 | T-066 | [ ] Create `scripts/04_train_ml_estimator.py` — ML estimator training entry point | P0 | T-063, T-064, T-065, T-058, T-059 | 3h | Loads config, trains model, saves checkpoints, logs to TensorBoard+W&B, early stopping |
 | T-067 | [ ] Train LSTM estimator | P1 | T-060, T-066 | 2-4h | Model trained, checkpoint saved, metrics logged, convergence verified |
 | T-068 | [ ] Train GRU estimator | P1 | T-060, T-066 | 2-4h | Model trained, checkpoint saved, metrics logged, convergence verified |
 | T-069 | [ ] Train TCN estimator | P1 | T-060, T-066 | 2-4h | Model trained, checkpoint saved, metrics logged, convergence verified |
-| T-070 | [ ] Write unit tests for ML estimator models | P2 | T-063, T-064, T-065, T-014 | 1h | Tests forward pass, output shapes, gradient flow |
+| T-070 | [x] Write unit tests for ML estimator models | P2 | T-063, T-064, T-065, T-014 | 1h | Tests forward pass, output shapes, gradient flow |
 
 ---
 
