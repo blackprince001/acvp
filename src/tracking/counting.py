@@ -158,9 +158,15 @@ class VehicleCounter:
     self._zones: dict[int, CountingZone] = {}
 
     # Tracking state for redundancy prevention
-    self._track_line_sides: dict[int, dict[int, int]] = {}  # track_id -> line_id -> side
-    self._track_line_crossed: dict[int, set[int]] = {}  # track_id -> set of crossed lines
-    self._track_zone_entered: dict[int, set[int]] = {}  # track_id -> set of entered zones
+    self._track_line_sides: dict[
+      int, dict[int, int]
+    ] = {}  # track_id -> line_id -> side
+    self._track_line_crossed: dict[
+      int, set[int]
+    ] = {}  # track_id -> set of crossed lines
+    self._track_zone_entered: dict[
+      int, set[int]
+    ] = {}  # track_id -> set of entered zones
     self._all_seen_ids: set[int] = set()
 
     # Cumulative counts

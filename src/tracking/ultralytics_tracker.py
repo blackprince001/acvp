@@ -139,15 +139,15 @@ class UltralyticsTracker(BaseTracker):
           cls_id = cls_ids[i]
 
           # Compute centroid
-          centroid = np.array([
-            (bbox[0] + bbox[2]) / 2,
-            (bbox[1] + bbox[3]) / 2,
-          ])
+          centroid = np.array(
+            [
+              (bbox[0] + bbox[2]) / 2,
+              (bbox[1] + bbox[3]) / 2,
+            ]
+          )
 
           # Compute velocity from previous position
-          velocity, direction, speed = self._compute_movement_vector(
-            track_id, centroid
-          )
+          velocity, direction, speed = self._compute_movement_vector(track_id, centroid)
 
           # Update track age and hits
           if track_id not in self._track_ages:
