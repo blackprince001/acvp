@@ -1,5 +1,5 @@
 """
-Pixel occupancy computation (T-053).
+Pixel occupancy computation.
 
 Computes the fraction of road pixels covered by vehicle masks.
 """

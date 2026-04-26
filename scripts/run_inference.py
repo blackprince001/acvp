@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Inference entry point — Phase 7.
+Inference entry point.
 
 Runs the detection + tracking + spatial filtering + feature extraction
 pipeline on a video source, optionally invoking the ML density

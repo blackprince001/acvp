@@ -1,5 +1,5 @@
 """
-Unit tests for tracking module (T-049).
+Unit tests for tracking module.
 
 Tests cover:
 - Base tracker interface and Track dataclass.
@@ -27,11 +27,6 @@ if str(PROJECT_ROOT) not in sys.path:
   sys.path.insert(0, str(PROJECT_ROOT))
 
 
-# ---------------------------------------------------------------------------
-# Shared fixtures / helpers
-# ---------------------------------------------------------------------------
-
-
 def _make_track_result(
   n_tracks: int = 3, track_ids: list[int] | None = None
 ) -> MagicMock:
@@ -43,7 +38,10 @@ def _make_track_result(
     track_ids = list(range(1, n_tracks + 1))
 
   # Create mock tensor-like objects
-  boxes_data = np.array([[i * 10, i * 10, i * 10 + 50, i * 10 + 50] for i in range(n_tracks)], dtype=np.float32)
+  boxes_data = np.array(
+    [[i * 10, i * 10, i * 10 + 50, i * 10 + 50] for i in range(n_tracks)],
+    dtype=np.float32,
+  )
   track_ids_data = np.array(track_ids, dtype=np.float32)
   confs_data = np.ones(n_tracks, dtype=np.float32) * 0.9
   cls_data = np.zeros(n_tracks, dtype=np.float32)
@@ -75,11 +73,6 @@ def _tracker_config() -> dict:
     "match_thresh": 0.8,
     "fuse_score": True,
   }
-
-
-# ---------------------------------------------------------------------------
-# Tests: Track dataclass
-# ---------------------------------------------------------------------------
 
 
 class TestTrackDataclass:
@@ -126,11 +119,6 @@ class TestTrackDataclass:
     assert isinstance(track.history, list)
 
 
-# ---------------------------------------------------------------------------
-# Tests: TrackingOutput dataclass
-# ---------------------------------------------------------------------------
-
-
 class TestTrackingOutputDataclass:
   """Test the TrackingOutput dataclass."""
 
@@ -157,11 +145,6 @@ class TestTrackingOutputDataclass:
     assert output.new_tracks == [1]
 
 
-# ---------------------------------------------------------------------------
-# Tests: BaseTracker interface
-# ---------------------------------------------------------------------------
-
-
 class TestBaseTrackerInterface:
   """Verify that the abstract interface cannot be instantiated directly."""
 
@@ -173,7 +156,7 @@ class TestBaseTrackerInterface:
 
   def test_trajectory_methods(self):
     """Test trajectory tracking in a concrete implementation."""
-    from src.tracking.base import BaseTracker, Track, TrackingOutput
+    from src.tracking.base import BaseTracker, TrackingOutput
 
     # Create a minimal concrete implementation for testing
     class MinimalTracker(BaseTracker):
@@ -205,11 +188,6 @@ class TestBaseTrackerInterface:
 
     # Non-existent track
     assert tracker.get_trajectory(999) is None
-
-
-# ---------------------------------------------------------------------------
-# Tests: UltralyticsTracker
-# ---------------------------------------------------------------------------
 
 
 class TestUltralyticsTracker:
@@ -300,7 +278,9 @@ class TestUltralyticsTracker:
     # Second frame: track moved to (75, 75) - so centroid moves from (25, 25) to (75, 75)
     result2 = MagicMock()
     result2.boxes = MagicMock()
-    result2.boxes.xyxy.cpu().numpy.return_value = np.array([[50, 50, 100, 100]], dtype=np.float32)
+    result2.boxes.xyxy.cpu().numpy.return_value = np.array(
+      [[50, 50, 100, 100]], dtype=np.float32
+    )
     result2.boxes.id = MagicMock()
     result2.boxes.id.cpu().numpy.return_value = np.array([1], dtype=np.float32)
     result2.boxes.conf.cpu().numpy.return_value = np.array([0.9], dtype=np.float32)
@@ -373,11 +353,6 @@ class TestUltralyticsTracker:
       assert len(tracker.get_trajectories()) == 0
 
 
-# ---------------------------------------------------------------------------
-# Tests: CountingLine
-# ---------------------------------------------------------------------------
-
-
 class TestCountingLine:
   """Test the CountingLine class."""
 
@@ -424,11 +399,6 @@ class TestCountingLine:
     assert side_left != side_right
 
 
-# ---------------------------------------------------------------------------
-# Tests: CountingZone
-# ---------------------------------------------------------------------------
-
-
 class TestCountingZone:
   """Test the CountingZone class."""
 
@@ -462,11 +432,6 @@ class TestCountingZone:
     assert zone.contains(np.array([150, 50])) is False
     assert zone.contains(np.array([-10, 50])) is False
     assert zone.contains(np.array([50, 150])) is False
-
-
-# ---------------------------------------------------------------------------
-# Tests: VehicleCounter
-# ---------------------------------------------------------------------------
 
 
 class TestVehicleCounter:
@@ -568,8 +533,12 @@ class TestVehicleCounter:
 
     tracks = [
       Track(track_id=1, bbox=np.array([0, 0, 50, 50]), confidence=0.9, class_id=0),
-      Track(track_id=2, bbox=np.array([100, 100, 150, 150]), confidence=0.9, class_id=0),
-      Track(track_id=3, bbox=np.array([200, 200, 250, 250]), confidence=0.9, class_id=0),
+      Track(
+        track_id=2, bbox=np.array([100, 100, 150, 150]), confidence=0.9, class_id=0
+      ),
+      Track(
+        track_id=3, bbox=np.array([200, 200, 250, 250]), confidence=0.9, class_id=0
+      ),
     ]
 
     result = counter.update(tracks)
@@ -619,12 +588,20 @@ class TestVehicleCounter:
     counter.add_line(CountingLine(1, [0, 100], [640, 100]))
 
     # Track 1: crosses from above to below (positive)
-    track1_above = Track(track_id=1, bbox=np.array([100, 25, 150, 75]), confidence=0.9, class_id=0)
-    track1_below = Track(track_id=1, bbox=np.array([100, 125, 150, 175]), confidence=0.9, class_id=0)
+    track1_above = Track(
+      track_id=1, bbox=np.array([100, 25, 150, 75]), confidence=0.9, class_id=0
+    )
+    track1_below = Track(
+      track_id=1, bbox=np.array([100, 125, 150, 175]), confidence=0.9, class_id=0
+    )
 
     # Track 2: crosses from below to above (negative)
-    track2_below = Track(track_id=2, bbox=np.array([300, 125, 350, 175]), confidence=0.9, class_id=0)
-    track2_above = Track(track_id=2, bbox=np.array([300, 25, 350, 75]), confidence=0.9, class_id=0)
+    track2_below = Track(
+      track_id=2, bbox=np.array([300, 125, 350, 175]), confidence=0.9, class_id=0
+    )
+    track2_above = Track(
+      track_id=2, bbox=np.array([300, 25, 350, 75]), confidence=0.9, class_id=0
+    )
 
     counter.update([track1_above, track2_below])
     result = counter.update([track1_below, track2_above])
@@ -641,7 +618,9 @@ class TestVehicleCounter:
 
     tracks = [
       Track(track_id=1, bbox=np.array([0, 0, 50, 50]), confidence=0.9, class_id=0),
-      Track(track_id=2, bbox=np.array([100, 100, 150, 150]), confidence=0.9, class_id=0),
+      Track(
+        track_id=2, bbox=np.array([100, 100, 150, 150]), confidence=0.9, class_id=0
+      ),
     ]
     counter.update(tracks)
 

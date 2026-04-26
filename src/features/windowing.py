@@ -1,5 +1,5 @@
 """
-Temporal window builder (T-058).
+Temporal window builder.
 
 Converts a sequence of per-frame feature vectors into (input, target) pairs
 for supervised sequence-to-sequence training.

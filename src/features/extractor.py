@@ -1,5 +1,5 @@
 """
-Feature extractor (T-057).
+Feature extractor.
 
 Extracts 10 per-frame features from a FilteredResult + road mask.
 

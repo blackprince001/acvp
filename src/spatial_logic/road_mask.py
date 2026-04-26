@@ -1,5 +1,5 @@
 """
-Road mask manager (T-050).
+Road mask manager.
 
 Loads a static road mask from disk, generates one from segmentation output,
 and returns the appropriate mask per frame.

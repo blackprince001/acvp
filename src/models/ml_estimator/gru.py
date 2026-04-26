@@ -1,5 +1,5 @@
 """
-GRU estimator (T-064).
+GRU estimator.
 """
 
 from __future__ import annotations

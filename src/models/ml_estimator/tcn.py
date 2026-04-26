@@ -1,5 +1,5 @@
 """
-TCN estimator (T-065).
+TCN estimator.
 
 Temporal Convolutional Network with dilated causal convolutions and
 residual connections.

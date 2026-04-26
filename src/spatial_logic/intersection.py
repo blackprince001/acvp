@@ -1,5 +1,5 @@
 """
-IoU-based overlap computation between detections and road mask (T-051).
+IoU-based overlap computation between detections and road mask.
 
 Two public functions:
 - compute_mask_road_iou  – vehicle binary mask vs road mask

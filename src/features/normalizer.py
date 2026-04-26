@@ -1,5 +1,5 @@
 """
-Feature normalizer (T-059).
+Feature normalizer.
 
 Supports standard (z-score), minmax, and robust normalization.
 Pure numpy — no sklearn dependency.

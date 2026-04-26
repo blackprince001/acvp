@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Detection training entry point — Phase 2.
+Detection training entry point.
 
 Prepares a YOLO-format dataset from ``data/segmented/`` (COCO annotations),
 then trains the requested detection model variant(s).
@@ -352,7 +352,7 @@ def main(argv: list[str] | None = None) -> None:
   log_file.parent.mkdir(parents=True, exist_ok=True)
   logger.add(log_file, level="DEBUG", rotation="10 MB")
 
-  logger.info("=== Phase 1: Data Preparation ===")
+  logger.info("===  Data Preparation ===")
   data_yaml = prepare_yolo_dataset(
     force=args.force_prepare,
     symlink_images=not args.no_symlink,
@@ -362,7 +362,7 @@ def main(argv: list[str] | None = None) -> None:
     logger.info("--prepare-only flag set; skipping training.")
     return
 
-  logger.info("=== Phase 2: Training ===")
+  logger.info("=== Training ===")
 
   # Build overrides dict (only include keys the caller explicitly set)
   overrides: dict = {}

@@ -1,5 +1,5 @@
 """
-On-road classification filter (T-052).
+On-road classification filter.
 
 Classifies tracked vehicles as on-road or off-road using overlap threshold
 and an optional minimum-speed gate.

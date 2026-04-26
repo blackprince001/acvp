@@ -1,5 +1,5 @@
 """
-Base ML estimator interface (T-062).
+Base ML estimator interface.
 """
 
 from __future__ import annotations

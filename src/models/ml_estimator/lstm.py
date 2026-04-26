@@ -1,5 +1,5 @@
 """
-LSTM estimator (T-063).
+LSTM estimator.
 """
 
 from __future__ import annotations

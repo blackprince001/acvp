@@ -148,17 +148,11 @@
 
 ---
 
-## Phase 8: Model Optimization
+## Phase 8: Model Optimization — DROPPED
 
-| ID | Task | Priority | Dependencies | Effort | Acceptance Criteria |
-|----|------|----------|-------------|--------|-------------------|
-| T-078 | [ ] Implement `src/optimization/onnx_export.py` — ONNX export utilities | P1 | T-032, T-033 | 2h | Exports detection models to ONNX with dynamic axes |
-| T-079 | [ ] Implement `src/optimization/tensorrt.py` — TensorRT conversion | P2 | T-078 | 3h | Converts ONNX to TensorRT engine, supports FP16 and INT8 |
-| T-080 | [ ] Implement `src/optimization/benchmark.py` — Optimization benchmarking | P1 | T-078, T-079 | 2h | Measures latency (mean, p50, p95, p99), FPS, GPU memory for each format |
-| T-081 | [ ] Export all trained detection models to ONNX | P2 | T-036-T-043, T-078 | 1h | ONNX files saved, validated with onnxruntime |
-| T-082 | [ ] Create `scripts/07_export_models.py` — Model export entry point | P2 | T-078, T-079 | 1h | CLI tool to export models to ONNX/TensorRT with configurable precision |
-| T-083 | [ ] Benchmark ONNX models vs PyTorch | P2 | T-081, T-080 | 1h | Results logged, speedup factors computed |
-| T-084 | [ ] Benchmark TensorRT models vs ONNX (if TensorRT available) | P3 | T-079, T-080 | 1h | Results logged, speedup factors computed |
+Out of scope for this project. ONNX/TensorRT export and the associated
+benchmarks (former T-078–T-084) will not be pursued. T-093 in Phase 9
+and T-112 in Phase 11 (which depended on this phase) are also dropped.
 
 ---
 
@@ -166,16 +160,16 @@
 
 | ID | Task | Priority | Dependencies | Effort | Acceptance Criteria |
 |----|------|----------|-------------|--------|-------------------|
-| T-085 | [ ] Implement `src/evaluation/metrics.py` — All metric implementations | P0 | T-007 | 2h | FPS, latency, MAE, RMSE, MAPE, R², detection metrics (precision, recall, mAP) |
-| T-086 | [ ] Implement `src/evaluation/benchmark.py` — Benchmark runner | P0 | T-085, T-073 | 3h | Runs model benchmarks, predictor benchmarks, environmental comparison |
-| T-087 | [ ] Implement `src/evaluation/visualization.py` — Graph generation | P1 | T-085 | 3h | All plot functions from SPEC Section 11.3 implemented, publication-quality output |
+| T-085 | [x] Implement `src/evaluation/metrics.py` — All metric implementations | P0 | T-007 | 2h | FPS, latency, MAE, RMSE, MAPE, R², detection metrics (precision, recall, mAP) |
+| T-086 | [x] Implement `src/evaluation/benchmark.py` — Benchmark runner (model-only, paper-style) | P0 | T-085 | 3h | Runs detection model benchmarks (val + latency loop), emits per-model JSON + summary CSV |
+| T-087 | [x] Implement `src/evaluation/visualization.py` — Graph generation | P1 | T-085 | 3h | mAP/FPS bars, latency boxplot, speed-vs-accuracy scatter, size-vs-accuracy scatter, per-class AP heatmap |
 | T-088 | [ ] Run FPS benchmark across all YOLO detection variants | P1 | T-036-T-043, T-086 | 2h | Results saved, FPS comparison data available |
 | T-089 | [ ] Run latency benchmark across all YOLO detection variants | P1 | T-036-T-043, T-086 | 2h | Results saved, latency distribution data available |
 | T-090 | [ ] Run MAE benchmark (vehicle count accuracy) across all variants | P1 | T-036-T-043, T-086 | 2h | Results saved, MAE comparison data available |
 | T-091 | [ ] Run ML estimator accuracy benchmark (RMSE, MAPE, R²) | P1 | T-067-T-069, T-086 | 2h | Results saved, predictor comparison data available |
 | T-092 | [ ] Run environmental comparison (highway vs urban vs suburban) | P1 | T-088, T-090, T-086 | 2h | Results saved, environment breakdown data available |
-| T-093 | [ ] Run optimization impact benchmark (PyTorch vs ONNX vs TensorRT) | P2 | T-083, T-084, T-086 | 1h | Results saved, optimization impact data available |
-| T-094 | [ ] Create `scripts/06_evaluate.py` — Evaluation entry point | P1 | T-086, T-087 | 1h | CLI tool to run all benchmarks and generate results |
+| T-093 | ~~Run optimization impact benchmark~~ — DROPPED with Phase 8 | — | — | — | — |
+| T-094 | [x] Create `scripts/evaluate.py` — Evaluation entry point | P1 | T-086, T-087 | 1h | CLI tool to discover trained checkpoints, run benchmarks, render figures, log to tracker |
 
 ---
 
@@ -183,107 +177,9 @@
 
 | ID | Task | Priority | Dependencies | Effort | Acceptance Criteria |
 |----|------|----------|-------------|--------|-------------------|
-| T-095 | [ ] Implement `src/experiment/tracker.py` — Unified experiment tracker | P1 | T-005 | 2h | Supports multiple backends, unified API for logging params, metrics, images, models |
-| T-096 | [ ] Implement `src/experiment/tensorboard_logger.py` — TensorBoard integration | P1 | T-095 | 1h | Logs scalars, images, histograms, graphs to TensorBoard |
-| T-097 | [ ] Implement `src/experiment/wandb_logger.py` — W&B integration | P1 | T-095 | 1h | Logs all metric types, model artifacts, supports offline mode |
+| T-095 | [x] Implement `src/experiment/tracker.py` — Unified experiment tracker | P1 | T-005 | 2h | BaseLogger interface + ExperimentTracker fan-out + NoOpLogger; from_config builder |
+| T-096 | [x] Implement `src/experiment/tensorboard_logger.py` — TensorBoard integration | P1 | T-095 | 1h | Wraps SummaryWriter; scalars + image artifacts + hparam logging |
+| T-097 | [x] Implement `src/experiment/wandb_logger.py` — W&B integration | P1 | T-095 | 1h | Wraps wandb SDK; metrics + artifacts; supports offline/disabled modes |
 | T-098 | [ ] Integrate experiment tracking into detection training script | P1 | T-095, T-035 | 1h | Training logs to both TensorBoard and W&B |
 | T-099 | [ ] Integrate experiment tracking into ML estimator training script | P1 | T-095, T-066 | 1h | Training logs to both TensorBoard and W&B |
-| T-100 | [ ] Integrate experiment tracking into benchmark runner | P1 | T-095, T-086 | 1h | Benchmark results logged to both backends |
-
----
-
-## Phase 11: Paper Infrastructure
-
-| ID | Task | Priority | Dependencies | Effort | Acceptance Criteria |
-|----|------|----------|-------------|--------|-------------------|
-| T-101 | [ ] Set up `paper/figures/` directory structure | P2 | None | 15min | All subdirectories exist (architecture, performance, comparison, environment) |
-| T-102 | [ ] Set up `paper/tables/` directory structure | P2 | None | 15min | Directory exists for CSV/JSON table data |
-| T-103 | [ ] Create `paper/references.bib` — Bibliography file | P2 | None | 1h | BibTeX entries for YOLO, tracking, Roboflow, density estimation papers |
-| T-104 | [ ] Generate architecture diagram (Figure 1) | P2 | T-087 | 1h | SVG diagram of system architecture saved to `paper/figures/architecture/` |
-| T-105 | [ ] Generate pipeline data flow diagram (Figure 2) | P2 | T-087 | 1h | SVG diagram of data flow saved to `paper/figures/architecture/` |
-| T-106 | [ ] Generate FPS comparison chart (Figure 3) | P2 | T-088, T-087 | 30min | Bar chart saved to `paper/figures/performance/` |
-| T-107 | [ ] Generate latency distribution box plots (Figure 4) | P2 | T-089, T-087 | 30min | Box plots saved to `paper/figures/performance/` |
-| T-108 | [ ] Generate MAE comparison chart (Figure 5) | P2 | T-090, T-087 | 30min | Bar chart saved to `paper/figures/performance/` |
-| T-109 | [ ] Generate actual vs predicted density time series (Figure 6) | P2 | T-091, T-087 | 30min | Time series plot saved to `paper/figures/performance/` |
-| T-110 | [ ] Generate RMSE/MAPE across LSTM/GRU/TCN chart (Figure 7) | P2 | T-091, T-087 | 30min | Grouped bar chart saved to `paper/figures/comparison/` |
-| T-111 | [ ] Generate environment comparison chart (Figure 8) | P2 | T-092, T-087 | 30min | Grouped bar chart saved to `paper/figures/environment/` |
-| T-112 | [ ] Generate optimization impact chart (Figure 9) | P2 | T-093, T-087 | 30min | Before/after bar chart saved to `paper/figures/performance/` |
-| T-113 | [ ] Export all table data (Tables 1-6) | P2 | T-088-T-093 | 1h | CSV/JSON files for all 6 tables saved to `paper/tables/` |
-| T-114 | [ ] Create `scripts/07_generate_paper_figures.py` — Figure generation entry point | P2 | T-104-T-113 | 1h | CLI tool to regenerate all figures from results data |
-
----
-
-## Phase 12: Vision Transformer Segmentation (Future Optimization)
-
-| ID | Task | Priority | Dependencies | Effort | Acceptance Criteria |
-|----|------|----------|-------------|--------|-------------------|
-| T-115 | [ ] Research and select ViT segmentation architecture | P3 | None | 2h | Architecture decision documented (ViT + Mask2Former or SETR) |
-| T-116 | [ ] Implement `src/models/segmentation/vit_seg.py` — ViT segmentation model | P3 | T-115 | 4h | ViT-based segmentation model with configurable backbone and decoder |
-| T-117 | [ ] Train ViT segmentation model | P3 | T-116, T-027 | 6-12h | Model trained, checkpoint saved, metrics logged |
-| T-118 | [ ] Benchmark ViT segmentation vs YOLO detection | P3 | T-117, T-086 | 1h | Results saved, accuracy/speed comparison available |
-| T-119 | [ ] Write unit tests for ViT segmentation model | P3 | T-116, T-014 | 1h | Tests forward pass, mask output shapes |
-
----
-
-## Phase 13: Documentation & Final Review
-
-| ID | Task | Priority | Dependencies | Effort | Acceptance Criteria |
-|----|------|----------|-------------|--------|-------------------|
-| T-120 | [ ] Write comprehensive README.md | P1 | All phases complete | 2h | Project overview, setup instructions, usage examples, architecture description |
-| T-121 | [ ] Add docstrings to all public classes and functions | P1 | All phases complete | 4h | Every public API has docstring with args, returns, examples |
-| T-122 | [ ] Run full test suite and fix any failures | P0 | All phases complete | 2h | `pytest tests/ -v` passes with 100% pass rate |
-| T-123 | [ ] Run linting and fix style issues | P2 | All phases complete | 1h | No linting errors |
-| T-124 | [ ] Verify all experiment configs are valid and runnable | P1 | All phases complete | 1h | Each config file loads without errors |
-| T-125 | [ ] Verify end-to-end pipeline on test video | P0 | All phases complete | 1h | Full pipeline (detect → track → filter → predict) runs on test video |
-| T-126 | [ ] Verify all paper figures are generated correctly | P2 | T-114 | 30min | All 9 figures exist and are publication-quality |
-| T-127 | [ ] Cross-reference TASKS.md with SPEC.md for completeness | P1 | All phases complete | 1h | Every spec section has corresponding tasks |
-| T-128 | [ ] Final review of PROBLEM.md for accuracy and completeness | P1 | All phases complete | 30min | Problem statement reflects actual implementation |
-
----
-
-## Execution Order Summary
-
-```
-Phase 0  ──▶ Phase 1  ──▶ Phase 2 ──▶ Phase 3 ──▶ Phase 4 ──▶ Phase 5 ──▶ Phase 6 ──▶ Phase 7
-                                                                                         │
-                                                                                         ▼
-Phase 10 (parallel)                                              Phase 8 ──▶ Phase 9
-                                                                                         │
-                                                                                         ▼
-Phase 13 ◀── Phase 12 ◀── Phase 11 ◀───────────────────────────── Phase 9
-```
-
-**Parallel tracks:**
-
-- Phase 10 (Experiment Tracking) can begin as soon as Phase 0 is complete
-- Phase 12 (ViT) can begin after Phase 2, runs parallel to Phases 3-9
-- Phase 11 (Paper) begins after Phase 9 results are available
-
----
-
-## Task Statistics
-
-| Category | Count |
-|----------|-------|
-| Total tasks | 128 |
-| P0 (Critical) | 32 |
-| P1 (High) | 48 |
-| P2 (Medium) | 40 |
-| P3 (Low/Future) | 8 |
-
-| Phase | Tasks | Estimated Total Effort |
-|-------|-------|----------------------|
-| Phase 0: Scaffolding | 15 | ~12h |
-| Phase 1: Data Pipeline | 15 | ~22h |
-| Phase 2: Detection Training | 14 | ~25h (mostly GPU time) |
-| Phase 3: Tracking | 5 | ~6h |
-| Phase 4: Spatial Logic | 7 | ~9h |
-| Phase 5: Feature Engineering | 5 | ~6h |
-| Phase 6: ML Estimator | 9 | ~18h (mostly GPU time) |
-| Phase 7: Inference Pipeline | 7 | ~14h |
-| Phase 8: Optimization | 7 | ~8h |
-| Phase 9: Evaluation | 10 | ~14h |
-| Phase 10: Experiment Tracking | 6 | ~6h |
-| Phase 11: Paper Infrastructure | 14 | ~7h |
-| Phase 12: ViT Segmentation (Future) | 5 | ~18h |
-| Phase 13: Documentation | 9 | ~12h |
+| T-100 | [x] Integrate experiment tracking into benchmark runner | P1 | T-095, T-086 | 1h | DetectionBenchmark logs params + per-model metrics + figure artifacts via ExperimentTracker |
