@@ -1,6 +1,6 @@
 mode: predict
 model:
-  name: yolov8s-seg
+  name: yolov8n
 estimator:
   name: tcn
 tracking:
