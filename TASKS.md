@@ -138,12 +138,12 @@
 
 | ID | Task | Priority | Dependencies | Effort | Acceptance Criteria |
 |----|------|----------|-------------|--------|-------------------|
-| T-071 | [ ] Implement `src/inference/queue.py` — Inter-component communication queues | P0 | T-007 | 1h | Thread-safe queue with overflow handling (drop_oldest, block, drop_newest policies) |
-| T-072 | [ ] Implement `src/inference/video_io.py` — Video input/output handling | P0 | T-016 | 1h | Reads video frames, writes output video with overlays, handles different codecs |
-| T-073 | [ ] Implement `src/inference/orchestrator.py` — Main pipeline orchestrator | P0 | T-032, T-033, T-045, T-046, T-050, T-051, T-052, T-057, T-062, T-063, T-064 | 4h | Coordinates all components, supports detect/predict modes, outputs density stream |
-| T-074 | [ ] Implement `src/inference/parallel.py` — Async/parallel execution engine | P1 | T-071, T-073 | 3h | Runs pipeline stages in parallel using threads/processes, manages queues between stages |
-| T-075 | [ ] Implement fixed-FPS inference controller | P1 | T-073 | 1h | Maintains target FPS, sleeps if too fast, skips frames if too slow, logs actual FPS |
-| T-076 | [ ] Create `scripts/05_run_inference.py` — Inference entry point | P0 | T-073, T-074 | 2h | Loads config, runs pipeline on video, outputs results (video overlay + telemetry data) |
+| T-071 | [x] Implement `src/inference/queue.py` — Inter-component communication queues | P0 | T-007 | 1h | Thread-safe queue with overflow handling (drop_oldest, block, drop_newest policies) |
+| T-072 | [x] Implement `src/inference/video_io.py` — Video input/output handling | P0 | T-016 | 1h | Reads video frames, writes output video with overlays, handles different codecs |
+| T-073 | [x] Implement `src/inference/orchestrator.py` — Main pipeline orchestrator | P0 | T-032, T-033, T-045, T-046, T-050, T-051, T-052, T-057, T-062, T-063, T-064 | 4h | Coordinates all components, supports detect/predict modes, outputs density stream |
+| T-074 | [x] Implement `src/inference/parallel.py` — Async/parallel execution engine | P1 | T-071, T-073 | 3h | Runs pipeline stages in parallel using threads/processes, manages queues between stages |
+| T-075 | [x] Implement fixed-FPS inference controller | P1 | T-073 | 1h | Maintains target FPS, sleeps if too fast, skips frames if too slow, logs actual FPS |
+| T-076 | [x] Create `scripts/05_run_inference.py` — Inference entry point | P0 | T-073, T-074 | 2h | Loads config, runs pipeline on video, outputs results (video overlay + telemetry data) |
 | T-077 | [ ] Test end-to-end inference on short video clip | P1 | T-076 | 1h | Pipeline runs without errors, produces valid output |
 
 ---
