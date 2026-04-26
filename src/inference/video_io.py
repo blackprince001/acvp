@@ -157,11 +157,16 @@ def draw_overlay(
   filtered: FilteredResult | None = None,
   prediction: PredictionResult | None = None,
   road_mask: np.ndarray | None = None,
+  features: np.ndarray | None = None,
+  frame_idx: int | None = None,
+  timestamp: float | None = None,
+  fps: float | None = None,
+  mask_is_fallback: bool = False,
 ) -> np.ndarray:
   """Render detections, tracks, road mask, and predictions onto the frame."""
   out = frame.copy()
 
-  if road_mask is not None:
+  if road_mask is not None and not mask_is_fallback:
     mask = road_mask.astype(bool)
     if mask.shape[:2] == out.shape[:2]:
       overlay = out.copy()
@@ -176,9 +181,11 @@ def draw_overlay(
         continue
       x1, y1, x2, y2 = (int(v) for v in box[:4])
       cv2.rectangle(out, (x1, y1), (x2, y2), (255, 128, 0), 2)
+      speed = obj.get("speed")
+      label = f"id={track_id}" + (f" v={speed:.1f}" if speed is not None else "")
       cv2.putText(
         out,
-        f"id={track_id}",
+        label,
         (x1, max(y1 - 6, 10)),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.5,
@@ -187,40 +194,76 @@ def draw_overlay(
         cv2.LINE_AA,
       )
 
-  y = 24
+  panel_lines: list[str] = []
+  if frame_idx is not None:
+    head = f"frame {frame_idx}"
+    if timestamp is not None:
+      head += f"  t={timestamp:.2f}s"
+    if fps is not None:
+      head += f"  proc={fps:.1f} fps"
+    panel_lines.append(head)
+  if mask_is_fallback:
+    panel_lines.append("road-mask: FULL-FRAME FALLBACK")
+
   if filtered is not None:
-    _put_text(out, f"on-road: {filtered.vehicle_count}", (12, y))
-    y += 24
-    _put_text(out, f"occupancy: {filtered.occupancy_ratio:.3f}", (12, y))
-    y += 24
+    panel_lines.append(f"on-road vehicles: {filtered.vehicle_count}")
+    panel_lines.append(f"occupancy: {filtered.occupancy_ratio:.3f}")
+
+  if features is not None and features.size >= 10:
+    panel_lines.append(f"mean speed: {features[2]:.2f} px/f")
+    panel_lines.append(f"density: {features[4] * 1e4:.3f} /10k px")
+    panel_lines.append(f"congestion: {features[6]:.3f}")
+    panel_lines.append(f"stopped ratio: {features[7]:.3f}")
+    panel_lines.append(f"speed var: {features[8]:.2f}")
+    panel_lines.append(f"dir var: {features[9]:.2f}")
 
   if prediction is not None:
-    _put_text(out, f"density(now): {prediction.current_density:.2f}", (12, y))
-    y += 24
+    panel_lines.append(f"density(now): {prediction.current_density:.2f}")
     preds = prediction.predicted_density
     if preds is not None and preds.size > 0:
-      _put_text(out, f"pred(T+1): {float(preds.flat[0]):.2f}", (12, y))
+      panel_lines.append(f"pred(T+1): {float(preds.flat[0]):.2f}")
 
+  _draw_panel(out, panel_lines, origin=(12, 24))
   return out
 
 
-def _put_text(frame: np.ndarray, text: str, org: tuple[int, int]):
-  cv2.putText(
-    frame,
-    text,
-    org,
-    cv2.FONT_HERSHEY_SIMPLEX,
-    0.6,
+def _draw_panel(frame: np.ndarray, lines: list[str], origin: tuple[int, int]) -> None:
+  if not lines:
+    return
+  x0, y0 = origin
+  line_h = 22
+  pad = 8
+  font_scale = 0.55
+  width = 0
+  for line in lines:
+    (w, _), _ = cv2.getTextSize(line, cv2.FONT_HERSHEY_SIMPLEX, font_scale, 1)
+    width = max(width, w)
+  height = line_h * len(lines)
+  bg = frame.copy()
+  cv2.rectangle(
+    bg,
+    (x0 - pad, y0 - line_h + 4),
+    (x0 + width + pad, y0 + height - line_h + pad),
     (0, 0, 0),
-    3,
-    cv2.LINE_AA,
+    -1,
+  )
+  cv2.addWeighted(bg, 0.45, frame, 0.55, 0, dst=frame)
+  for i, line in enumerate(lines):
+    _put_text(frame, line, (x0, y0 + i * line_h), font_scale=font_scale)
+
+
+def _put_text(
+  frame: np.ndarray, text: str, org: tuple[int, int], font_scale: float = 0.6
+):
+  cv2.putText(
+    frame, text, org, cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), 3, cv2.LINE_AA
   )
   cv2.putText(
     frame,
     text,
     org,
     cv2.FONT_HERSHEY_SIMPLEX,
-    0.6,
+    font_scale,
     (255, 255, 255),
     1,
     cv2.LINE_AA,

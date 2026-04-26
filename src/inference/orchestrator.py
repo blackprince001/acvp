@@ -121,9 +121,17 @@ class InferenceOrchestrator:
     # Road mask manager
     self.mask_manager = RoadMaskManager()
     mask_path = (config.get("road_mask") or {}).get("static_path")
+    self._has_static_mask = False
     if mask_path:
       self.mask_manager.load_static(mask_path)
+      self._has_static_mask = True
       logger.info("Loaded static road mask from {}", mask_path)
+    else:
+      logger.warning(
+        "No road mask configured — falling back to FULL-FRAME mask. "
+        "occupancy/density/congestion metrics will reflect the entire frame, "
+        "not just drivable area. Pass --road-mask to use a real mask."
+      )
 
     # On-road filter
     filt_cfg = config.get("filtering", {}) or {}
@@ -184,7 +192,11 @@ class InferenceOrchestrator:
     telemetry_file = None
     telemetry_csv: csv.writer | None = None
 
+    log_every = int(self.config.get("log_every", 30))
     reader = VideoReader(video_source)
+    total_frames = reader.frame_count if max_frames is None else min(
+      reader.frame_count, max_frames
+    )
     try:
       if output_path is not None:
         writer = VideoWriter(
@@ -208,6 +220,17 @@ class InferenceOrchestrator:
         out = self._process_frame(frame_idx, timestamp, frame, feature_buffer)
         outputs.append(out)
 
+        if log_every > 0 and (frame_idx + 1) % log_every == 0:
+          stats = self.fps_controller.stats()
+          logger.info(
+            "Progress: {}/{} frames ({:.1f}%) | {:.2f} fps | {:.1f}s elapsed",
+            frame_idx + 1,
+            total_frames,
+            100.0 * (frame_idx + 1) / max(total_frames, 1),
+            stats["actual_fps"],
+            stats["elapsed_s"],
+          )
+
         if writer is not None:
           road_mask = self._try_get_mask(frame.shape[:2], frame_idx)
           annotated = draw_overlay(
@@ -216,6 +239,11 @@ class InferenceOrchestrator:
             filtered=out.filtered,
             prediction=out.prediction,
             road_mask=road_mask,
+            features=out.features,
+            frame_idx=frame_idx,
+            timestamp=timestamp,
+            fps=self.fps_controller.actual_fps(),
+            mask_is_fallback=not self._has_static_mask,
           )
           writer.write(annotated)
 
