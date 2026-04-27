@@ -16,19 +16,50 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 import seaborn as sns  # noqa: E402
 
-# Family colour palette — keeps cross-figure visual identity consistent.
+# High-contrast qualitative palette — picked so adjacent lines in overlay
+# plots stay distinguishable even when several models share a family.
 FAMILY_COLORS: dict[str, str] = {
-  "yolov5": "#4C72B0",
-  "yolov8": "#55A868",
-  "yolov9": "#C44E52",
-  "yolov10": "#8172B2",
-  "yolo11": "#CCB974",
-  "rtdetr": "#64B5CD",
+  "yolov5": "#1F77B4",  # blue
+  "yolov8": "#2CA02C",  # green
+  "yolov9": "#D62728",  # red
+  "yolov10": "#9467BD",  # purple
+  "yolov11": "#FF7F0E",  # orange
+  "rtdetr": "#8C564B",  # brown
 }
-DEFAULT_COLOR = "#888888"
+DEFAULT_COLOR = "#7F7F7F"  # neutral grey
+
+# Per-model overrides for overlay plots. Within a family we vary hue/shade
+# so individual sizes (n/s/m/l) remain distinguishable when plotted together.
+MODEL_COLORS: dict[str, str] = {
+  "yolov5n": "#1F77B4",  # blue
+  "yolov5s": "#17BECF",  # cyan
+  "yolov5m": "#0D4F8B",  # navy
+  "yolov5l": "#74A9CF",  # steel blue
+  "yolov8n": "#2CA02C",  # green
+  "yolov8s": "#006D2C",  # dark green
+  "yolov9c": "#D62728",  # red
+  "yolov10m": "#9467BD",  # purple
+  "yolov11m": "#FF7F0E",  # orange
+  "rtdetr-l": "#8C564B",  # brown
+}
+
+# Fallback palette for unknown model names — high-contrast tab10-like.
+_FALLBACK_PALETTE: tuple[str, ...] = (
+  "#1F77B4",
+  "#FF7F0E",
+  "#2CA02C",
+  "#D62728",
+  "#9467BD",
+  "#8C564B",
+  "#E377C2",
+  "#7F7F7F",
+  "#BCBD22",
+  "#17BECF",
+)
 
 
 def _family_of(name: str) -> str:
@@ -36,22 +67,44 @@ def _family_of(name: str) -> str:
   return m.group(1) if m else "other"
 
 
+def _color_for(family: str) -> str:
+  return FAMILY_COLORS.get(family, DEFAULT_COLOR)
+
+
+def _color_for_model(name: str, *, fallback_index: int | None = None) -> str:
+  """Return a per-model color; falls back to family color, then to a palette index."""
+  if name in MODEL_COLORS:
+    return MODEL_COLORS[name]
+  family = _family_of(name)
+  if family in FAMILY_COLORS:
+    return FAMILY_COLORS[family]
+  if fallback_index is not None:
+    return _FALLBACK_PALETTE[fallback_index % len(_FALLBACK_PALETTE)]
+  return DEFAULT_COLOR
+
+
 def _set_paper_style() -> None:
   sns.set_theme(
     context="paper",
     style="whitegrid",
-    palette="deep",
     rc={
-      "figure.dpi": 130,
-      "savefig.dpi": 200,
+      "figure.dpi": 150,
+      "savefig.dpi": 300,
       "savefig.bbox": "tight",
+      "savefig.pad_inches": 0.15,
       "axes.spines.top": False,
       "axes.spines.right": False,
-      "grid.alpha": 0.3,
+      "grid.alpha": 0.25,
+      "grid.linewidth": 0.5,
       "legend.frameon": False,
+      "legend.fontsize": 8,
       "font.family": "DejaVu Sans",
-      "axes.titlesize": 12,
-      "axes.labelsize": 10,
+      "axes.titlesize": 11,
+      "axes.titleweight": "medium",
+      "axes.labelsize": 9.5,
+      "xtick.labelsize": 8.5,
+      "ytick.labelsize": 8.5,
+      "lines.linewidth": 1.2,
     },
   )
 
@@ -86,6 +139,62 @@ def _to_dataframe(results: list[dict[str, Any]]) -> pd.DataFrame:
   return pd.DataFrame(rows)
 
 
+def _pareto_mask(
+  xs: np.ndarray, ys: np.ndarray, *, lower_x_better: bool = False
+) -> np.ndarray:
+  """Return boolean mask of Pareto-optimal points (higher y is better)."""
+  order = np.argsort(xs) if lower_x_better else np.argsort(-xs)
+  mask = np.zeros(len(xs), dtype=bool)
+  best_y = -np.inf
+  for i in order:
+    if ys[i] > best_y:
+      mask[i] = True
+      best_y = ys[i]
+  return mask
+
+
+def _draw_pareto(ax, xs, ys, mask, *, lower_x_better: bool = False):
+  """Draw a stepped Pareto frontier line."""
+  px, py = xs[mask], ys[mask]
+  order = np.argsort(px) if lower_x_better else np.argsort(-px)
+  px, py = px[order], py[order]
+  ax.step(
+    px,
+    py,
+    where="post",
+    color="#5A5A5A",
+    linewidth=1.0,
+    linestyle="--",
+    alpha=0.6,
+    zorder=1,
+    label="Pareto frontier",
+  )
+
+
+def _build_legend_handles(families: list[str]) -> list:
+  """Build deduplicated legend handles for family colors."""
+  from matplotlib.lines import Line2D
+
+  seen = []
+  handles = []
+  for f in families:
+    if f not in seen:
+      seen.append(f)
+      handles.append(
+        Line2D(
+          [0],
+          [0],
+          marker="o",
+          color="w",
+          markerfacecolor=_color_for(f),
+          markersize=7,
+          label=f,
+          linewidth=0,
+        )
+      )
+  return handles
+
+
 def plot_metric_bars(
   results: list[dict[str, Any]],
   metric: str,
@@ -95,97 +204,208 @@ def plot_metric_bars(
   ylabel: str | None = None,
   sort: bool = True,
 ) -> Path:
-  """Bar chart of a single metric across all models, coloured by family."""
+  """Horizontal lollipop/dot plot of a single metric across models."""
   _set_paper_style()
   df = _to_dataframe(results)
   if sort:
-    df = df.sort_values(metric, ascending=False)
+    df = df.sort_values(metric, ascending=True)  # ascending for bottom-to-top
 
-  fig, ax = plt.subplots(figsize=(max(6, 0.55 * len(df)), 4))
-  sns.barplot(
-    data=df,
-    x="model",
-    y=metric,
-    hue="family",
-    palette=FAMILY_COLORS,
-    dodge=False,
-    ax=ax,
+  colors = [_color_for(f) for f in df["family"]]
+  fig, ax = plt.subplots(figsize=(6, max(3, 0.4 * len(df))))
+  y_pos = range(len(df))
+
+  # stems
+  ax.hlines(y_pos, 0, df[metric], colors=colors, linewidth=1.5, zorder=2)
+  # dots
+  ax.scatter(
+    df[metric], y_pos, c=colors, s=55, zorder=3, edgecolors="white", linewidths=0.5
   )
-  for container in ax.containers:
-    ax.bar_label(container, fmt="%.3f", fontsize=8, padding=2)
-  ax.set_xlabel("")
-  ax.set_ylabel(ylabel or metric)
+  # value labels
+  for i, (val, _) in enumerate(zip(df[metric], y_pos, strict=True)):
+    ax.text(
+      val + (df[metric].max() * 0.015), i, f"{val:.3f}", va="center", fontsize=7.5
+    )
+
+  ax.set_yticks(list(y_pos))
+  ax.set_yticklabels(df["model"])
+  ax.set_xlabel(ylabel or metric)
   ax.set_title(title or metric)
-  ax.tick_params(axis="x", rotation=45)
-  for label in ax.get_xticklabels():
-    label.set_horizontalalignment("right")
-  ax.legend(title="family", loc="best", fontsize=8)
+  ax.set_xlim(left=0, right=df[metric].max() * 1.12)
+  ax.legend(
+    handles=_build_legend_handles(df["family"].tolist()), loc="lower right", fontsize=7
+  )
+  sns.despine(ax=ax, left=True)
+  ax.tick_params(axis="y", length=0)
   return _save(fig, output)
 
 
 def plot_latency_box(results: list[dict[str, Any]], output: str | Path) -> Path:
-  """Per-model latency distribution rendered from recorded percentiles."""
+  """Horizontal dumbbell/range plot: min → p50 → p95 → p99 per model."""
   _set_paper_style()
   df = _to_dataframe(results).sort_values("latency_mean_ms")
-  stats = [
-    {
-      "label": row["model"],
-      "med": row["latency_p50_ms"],
-      "q1": row["latency_p50_ms"]
-      - 0.5 * (row["latency_p95_ms"] - row["latency_p50_ms"]),
-      "q3": row["latency_p95_ms"],
-      "whislo": row["latency_min_ms"],
-      "whishi": row["latency_p99_ms"],
-      "fliers": [],
-    }
-    for _, row in df.iterrows()
-  ]
-  fig, ax = plt.subplots(figsize=(max(6, 0.55 * len(df)), 4))
-  ax.bxp(
-    stats,
-    showfliers=False,
-    patch_artist=True,
-    boxprops=dict(facecolor="#cfd9ea", edgecolor="#36476b"),
-    medianprops=dict(color="#36476b", linewidth=1.5),
-  )
-  ax.set_xticks(range(1, len(df) + 1))
-  ax.set_xticklabels(df["model"].tolist(), rotation=45, ha="right")
-  ax.set_ylabel("Latency (ms)")
+
+  fig, ax = plt.subplots(figsize=(6.5, max(3, 0.4 * len(df))))
+  y_pos = range(len(df))
+
+  for i, (_, row) in enumerate(df.iterrows()):
+    c = _color_for(row["family"])
+    # range line: min to p99
+    ax.hlines(
+      i, row["latency_min_ms"], row["latency_p99_ms"], colors=c, linewidth=1.5, zorder=2
+    )
+    # markers at each percentile
+    ax.scatter(
+      row["latency_min_ms"],
+      i,
+      c=c,
+      s=25,
+      marker="d",
+      zorder=3,
+      edgecolors="white",
+      linewidths=0.4,
+    )
+    ax.scatter(
+      row["latency_p50_ms"],
+      i,
+      c=c,
+      s=55,
+      marker="o",
+      zorder=3,
+      edgecolors="white",
+      linewidths=0.5,
+    )
+    ax.scatter(
+      row["latency_p95_ms"],
+      i,
+      c=c,
+      s=40,
+      marker="s",
+      zorder=3,
+      edgecolors="white",
+      linewidths=0.4,
+    )
+    ax.scatter(
+      row["latency_p99_ms"],
+      i,
+      c=c,
+      s=30,
+      marker="^",
+      zorder=3,
+      edgecolors="white",
+      linewidths=0.4,
+    )
+
+  ax.set_yticks(list(y_pos))
+  ax.set_yticklabels(df["model"])
+  ax.set_xlabel("Latency (ms)")
   ax.set_title("Per-model inference latency")
-  sns.despine(ax=ax)
+  sns.despine(ax=ax, left=True)
+  ax.tick_params(axis="y", length=0)
+
+  # marker legend
+  from matplotlib.lines import Line2D
+
+  marker_handles = [
+    Line2D(
+      [0],
+      [0],
+      marker="d",
+      color="w",
+      markerfacecolor="#777",
+      markersize=5,
+      label="min",
+      linewidth=0,
+    ),
+    Line2D(
+      [0],
+      [0],
+      marker="o",
+      color="w",
+      markerfacecolor="#777",
+      markersize=6,
+      label="p50",
+      linewidth=0,
+    ),
+    Line2D(
+      [0],
+      [0],
+      marker="s",
+      color="w",
+      markerfacecolor="#777",
+      markersize=5,
+      label="p95",
+      linewidth=0,
+    ),
+    Line2D(
+      [0],
+      [0],
+      marker="^",
+      color="w",
+      markerfacecolor="#777",
+      markersize=5,
+      label="p99",
+      linewidth=0,
+    ),
+  ]
+  ax.legend(
+    handles=marker_handles,
+    loc="lower right",
+    fontsize=7,
+    title="Percentile",
+    title_fontsize=7.5,
+  )
   return _save(fig, output)
 
 
 def plot_speed_accuracy(results: list[dict[str, Any]], output: str | Path) -> Path:
-  """Scatter: FPS vs mAP@0.5:0.95 — Pareto frontier visible by eye."""
+  """Scatter: FPS vs mAP@0.5:0.95 with Pareto frontier."""
   _set_paper_style()
   df = _to_dataframe(results)
   fig, ax = plt.subplots(figsize=(6.5, 4.5))
-  sns.scatterplot(
-    data=df,
-    x="fps_mean",
-    y="map50_95",
-    hue="family",
-    size="params_m",
-    palette=FAMILY_COLORS,
-    sizes=(50, 400),
-    edgecolor="black",
+
+  colors = [_color_for(f) for f in df["family"]]
+  sizes = 50 + 350 * (df["params_m"] - df["params_m"].min()) / max(
+    df["params_m"].max() - df["params_m"].min(), 1e-9
+  )
+
+  ax.scatter(
+    df["fps_mean"],
+    df["map50_95"],
+    c=colors,
+    s=sizes,
+    edgecolor="#444444",
     linewidth=0.4,
     alpha=0.85,
-    ax=ax,
+    zorder=3,
   )
+
+  # Pareto frontier (higher FPS + higher mAP = better)
+  xs, ys = df["fps_mean"].values, df["map50_95"].values
+  mask = _pareto_mask(xs, ys)
+  _draw_pareto(ax, xs, ys, mask)
+
   for _, row in df.iterrows():
     ax.annotate(
       row["model"],
       (row["fps_mean"], row["map50_95"]),
-      fontsize=8,
+      fontsize=7,
       xytext=(5, 5),
       textcoords="offset points",
     )
-  ax.set_xlabel("Throughput (FPS, higher is better)")
-  ax.set_ylabel("mAP@0.5:0.95 (higher is better)")
+
+  ax.set_xlabel("Throughput (FPS, higher →)")
+  ax.set_ylabel("mAP@0.5:0.95 (higher →)")
   ax.set_title("Speed vs. accuracy")
-  ax.legend(loc="best", fontsize=8, ncol=2)
+
+  handles = _build_legend_handles(df["family"].tolist())
+  from matplotlib.lines import Line2D
+
+  handles.append(
+    Line2D(
+      [0], [0], linestyle="--", color="#5A5A5A", alpha=0.6, label="Pareto frontier"
+    )
+  )
+  ax.legend(handles=handles, loc="best", fontsize=7, ncol=2)
   return _save(fig, output)
 
 
@@ -195,7 +415,7 @@ def plot_per_class_ap(
   *,
   metric_key: str = "per_class_ap50",
 ) -> Path:
-  """Heatmap of per-class AP across models."""
+  """Heatmap of per-class AP across models with muted earthy colormap."""
   _set_paper_style()
   rows = sorted(results, key=lambda r: r["model_name"])
   classes: list[str] = []
@@ -211,90 +431,141 @@ def plot_per_class_ap(
     index=[r["model_name"] for r in rows],
     columns=classes,
   )
+
+  # Muted sequential colormap: warm cream → terracotta → deep slate
+  from matplotlib.colors import LinearSegmentedColormap
+
+  cmap = LinearSegmentedColormap.from_list(
+    "earthy_seq", ["#F5F0E8", "#C4A96A", "#C47E6E", "#6B5B6B"], N=256
+  )
+
   fig, ax = plt.subplots(
-    figsize=(max(4, 0.6 * len(classes) + 2), max(4, 0.35 * len(rows)))
+    figsize=(max(4, 0.6 * len(classes) + 2), max(3, 0.35 * len(rows) + 0.5))
   )
   sns.heatmap(
     matrix,
     annot=True,
     fmt=".2f",
-    cmap="viridis",
+    cmap=cmap,
     vmin=0,
     vmax=1,
-    cbar_kws={"label": "AP"},
-    linewidths=0.5,
+    cbar_kws={"label": "AP", "shrink": 0.8},
+    linewidths=0.6,
     linecolor="white",
     ax=ax,
+    annot_kws={"fontsize": 7.5},
   )
   ax.set_title(metric_key)
-  ax.set_xlabel("class")
-  ax.set_ylabel("model")
+  ax.set_xlabel("Class")
+  ax.set_ylabel("Model")
+  ax.tick_params(axis="x", rotation=45)
+  for label in ax.get_xticklabels():
+    label.set_horizontalalignment("right")
   return _save(fig, output)
 
 
 def plot_size_vs_accuracy(results: list[dict[str, Any]], output: str | Path) -> Path:
-  """Model size (params, M) vs mAP — useful for the discussion section."""
+  """Model size (params, M) vs mAP with Pareto frontier."""
   _set_paper_style()
   df = _to_dataframe(results)
   fig, ax = plt.subplots(figsize=(6.5, 4.5))
-  sns.scatterplot(
-    data=df,
-    x="params_m",
-    y="map50_95",
-    hue="family",
-    palette=FAMILY_COLORS,
-    s=120,
-    edgecolor="black",
+
+  colors = [_color_for(f) for f in df["family"]]
+  ax.scatter(
+    df["params_m"],
+    df["map50_95"],
+    c=colors,
+    s=100,
+    edgecolor="#444444",
     linewidth=0.4,
-    ax=ax,
+    alpha=0.85,
+    zorder=3,
   )
+
+  # Pareto frontier (lower params + higher mAP = better)
+  xs, ys = df["params_m"].values, df["map50_95"].values
+  mask = _pareto_mask(xs, ys, lower_x_better=True)
+  _draw_pareto(ax, xs, ys, mask, lower_x_better=True)
+
   for _, row in df.iterrows():
     ax.annotate(
       row["model"],
       (row["params_m"], row["map50_95"]),
-      fontsize=8,
+      fontsize=7,
       xytext=(5, 5),
       textcoords="offset points",
     )
+
   ax.set_xscale("log")
-  ax.set_xlabel("Parameters (M, log scale)")
-  ax.set_ylabel("mAP@0.5:0.95")
+  ax.set_xlabel("Parameters (M, log scale, ← smaller)")
+  ax.set_ylabel("mAP@0.5:0.95 (higher →)")
   ax.set_title("Model size vs. accuracy")
-  ax.legend(title="family", loc="best", fontsize=8)
+
+  handles = _build_legend_handles(df["family"].tolist())
+  from matplotlib.lines import Line2D
+
+  handles.append(
+    Line2D(
+      [0], [0], linestyle="--", color="#5A5A5A", alpha=0.6, label="Pareto frontier"
+    )
+  )
+  ax.legend(handles=handles, loc="best", fontsize=7)
   return _save(fig, output)
 
 
 def plot_metric_grid(results: list[dict[str, Any]], output: str | Path) -> Path:
-  """4-up grid: P, R, mAP@0.5, mAP@0.5:0.95 across models. Compact paper figure."""
+  """Small-multiples lollipop grid: one panel per detection metric."""
   _set_paper_style()
-  df = _to_dataframe(results).sort_values("map50_95", ascending=False)
-  long = df.melt(
-    id_vars=["model", "family"],
-    value_vars=["precision", "recall", "map50", "map50_95"],
-    var_name="metric",
-    value_name="value",
+  df = _to_dataframe(results).sort_values("map50_95", ascending=True)
+
+  metrics = [
+    ("precision", "Precision"),
+    ("recall", "Recall"),
+    ("map50", "mAP@0.5"),
+    ("map50_95", "mAP@0.5:0.95"),
+  ]
+
+  n = len(df)
+  fig, axes = plt.subplots(
+    2,
+    2,
+    figsize=(9, max(4.5, 0.35 * n + 1.5)),
+    sharey=True,
   )
-  g = sns.catplot(
-    data=long,
-    kind="bar",
-    x="model",
-    y="value",
-    hue="family",
-    col="metric",
-    col_wrap=2,
-    palette=FAMILY_COLORS,
-    dodge=False,
-    height=3.2,
-    aspect=1.4,
-    sharey=False,
+  colors = [_color_for(f) for f in df["family"]]
+  y_pos = np.arange(n)
+
+  for ax, (key, label) in zip(axes.flat, metrics, strict=True):
+    vals = df[key].to_numpy()
+    ax.hlines(y_pos, 0, vals, colors=colors, linewidth=1.3, zorder=2)
+    ax.scatter(
+      vals, y_pos, c=colors, s=45, zorder=3, edgecolors="white", linewidths=0.5
+    )
+    xmax = max(float(vals.max()), 1e-3)
+    for i, v in enumerate(vals):
+      ax.text(v + xmax * 0.02, i, f"{v:.3f}", va="center", fontsize=7)
+    ax.set_xlim(0, xmax * 1.18)
+    ax.set_title(label, fontsize=10)
+    ax.tick_params(axis="y", length=0)
+    sns.despine(ax=ax, left=True)
+
+  axes[0, 0].set_yticks(list(y_pos))
+  axes[0, 0].set_yticklabels(df["model"])
+  axes[1, 0].set_yticks(list(y_pos))
+  axes[1, 0].set_yticklabels(df["model"])
+
+  fig.suptitle("Detection metrics profile", fontsize=11, y=1.0)
+
+  handles = _build_legend_handles(df["family"].tolist())
+  fig.legend(
+    handles=handles,
+    loc="lower center",
+    bbox_to_anchor=(0.5, -0.02),
+    fontsize=7.5,
+    ncol=min(len(handles), 6),
   )
-  g.set_xticklabels(rotation=45, horizontalalignment="right", fontsize=8)
-  g.set_titles("{col_name}")
-  g.set_axis_labels("", "score")
-  for ax in g.axes.flat:
-    for container in ax.containers:
-      ax.bar_label(container, fmt="%.2f", fontsize=7, padding=2)
-  return _save(g.figure, output)
+  fig.tight_layout()
+  return _save(fig, output)
 
 
 def render_all(summary_path: str | Path, output_dir: str | Path) -> dict[str, Path]:
@@ -338,6 +609,6 @@ def render_all(summary_path: str | Path, output_dir: str | Path) -> dict[str, Pa
 def _save(fig, output: str | Path) -> Path:
   output = Path(output)
   output.parent.mkdir(parents=True, exist_ok=True)
-  fig.savefig(output)
+  fig.savefig(output, dpi=300)
   plt.close(fig)
   return output
