@@ -106,6 +106,7 @@ class TCNEstimator(nn.Module):
       x = torch.tensor(x, dtype=torch.float32)
     if x.ndim == 2:
       x = x.unsqueeze(0)
+    x = x.to(next(self.parameters()).device)
     with torch.no_grad():
       out = self.forward(x)
     return out.reshape(-1, self.horizon, self.output_size).cpu().numpy()

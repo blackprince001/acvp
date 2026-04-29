@@ -37,3 +37,5 @@ runs/
 # Logs
 *.log
 train.log
+
+paper
