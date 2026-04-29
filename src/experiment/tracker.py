@@ -1,8 +1,8 @@
 """
 Unified experiment tracker.
 
-A thin facade over multiple backends (TensorBoard, W&B). All backends
-implement the same interface so callers don't depend on a specific one.
+A thin facade over pluggable backends. All backends implement the same
+interface so callers don't depend on a specific one.
 """
 
 from __future__ import annotations
@@ -62,29 +62,12 @@ class ExperimentTracker(BaseLogger):
 
   @classmethod
   def from_config(cls, config: dict[str, Any]) -> "ExperimentTracker":
-    """Build a tracker from a dict like::
+    """Build a tracker from a config dict.
 
-    {
-      "tensorboard": {"log_dir": "experiments/tb/run-001"},
-      "wandb": {"project": "aai-cv", "run_name": "bench-2026-04-26"},
-    }
-
-    Missing keys → that backend is skipped. Empty config → no-op tracker.
+    No backends are currently registered, so this always returns a no-op
+    tracker. The method is kept for forward-compatibility.
     """
-    backends: list[BaseLogger] = []
-    tb_cfg = config.get("tensorboard")
-    if tb_cfg:
-      from .tensorboard_logger import TensorBoardLogger
-
-      backends.append(TensorBoardLogger(**tb_cfg))
-    wb_cfg = config.get("wandb")
-    if wb_cfg:
-      from .wandb_logger import WandbLogger
-
-      backends.append(WandbLogger(**wb_cfg))
-    if not backends:
-      backends.append(NoOpLogger())
-    return cls(backends)
+    return cls([NoOpLogger()])
 
   def _safe(self, name: str, *args, **kwargs) -> None:
     for backend in self.backends:

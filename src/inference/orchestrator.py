@@ -7,6 +7,7 @@ optional density prediction on a single video source.
 from __future__ import annotations
 
 import csv
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -172,6 +173,7 @@ class InferenceOrchestrator:
     output_path: str | Path | None = None,
     telemetry_path: str | Path | None = None,
     max_frames: int | None = None,
+    duration_s: float | None = None,
   ) -> list[FrameOutput]:
     """Run the pipeline on *video_source* and return per-frame outputs.
 
@@ -194,9 +196,13 @@ class InferenceOrchestrator:
 
     log_every = int(self.config.get("log_every", 30))
     reader = VideoReader(video_source)
-    total_frames = reader.frame_count if max_frames is None else min(
-      reader.frame_count, max_frames
-    )
+    if reader.frame_count > 0:
+      total_frames = (
+        reader.frame_count if max_frames is None else min(reader.frame_count, max_frames)
+      )
+    else:
+      total_frames = max_frames or 0  # 0 = unknown (live stream)
+    deadline = (time.perf_counter() + duration_s) if duration_s else None
     try:
       if output_path is not None:
         writer = VideoWriter(
@@ -205,14 +211,26 @@ class InferenceOrchestrator:
       if telemetry_path is not None:
         telemetry_file = open(telemetry_path, "w", newline="")
         telemetry_csv = csv.writer(telemetry_file)
-        telemetry_csv.writerow(
-          ["frame_idx", "timestamp", "vehicle_count", "occupancy_ratio", *FEATURE_NAMES]
-        )
+        header = [
+          "frame_idx",
+          "timestamp",
+          "vehicle_count",
+          "occupancy_ratio",
+          *FEATURE_NAMES,
+        ]
+        if self.mode == "predict":
+          header.append("current_density")
+          for h in range(1, self.horizon + 1):
+            header.extend(f"pred_h{h}_{name}" for name in FEATURE_NAMES)
+        telemetry_csv.writerow(header)
 
       self.fps_controller.start()
 
       for frame_idx, timestamp, frame in reader.frames():
         if max_frames is not None and frame_idx >= max_frames:
+          break
+        if deadline is not None and time.perf_counter() >= deadline:
+          logger.info("Duration cap reached at frame {}", frame_idx)
           break
         if self.fps_controller.should_skip():
           continue
@@ -222,14 +240,22 @@ class InferenceOrchestrator:
 
         if log_every > 0 and (frame_idx + 1) % log_every == 0:
           stats = self.fps_controller.stats()
-          logger.info(
-            "Progress: {}/{} frames ({:.1f}%) | {:.2f} fps | {:.1f}s elapsed",
-            frame_idx + 1,
-            total_frames,
-            100.0 * (frame_idx + 1) / max(total_frames, 1),
-            stats["actual_fps"],
-            stats["elapsed_s"],
-          )
+          if total_frames > 0:
+            logger.info(
+              "Progress: {}/{} frames ({:.1f}%) | {:.2f} fps | {:.1f}s elapsed",
+              frame_idx + 1,
+              total_frames,
+              100.0 * (frame_idx + 1) / total_frames,
+              stats["actual_fps"],
+              stats["elapsed_s"],
+            )
+          else:
+            logger.info(
+              "Progress: {} frames | {:.2f} fps | {:.1f}s elapsed",
+              frame_idx + 1,
+              stats["actual_fps"],
+              stats["elapsed_s"],
+            )
 
         if writer is not None:
           road_mask = self._try_get_mask(frame.shape[:2], frame_idx)
@@ -252,15 +278,28 @@ class InferenceOrchestrator:
           and out.features is not None
           and out.filtered is not None
         ):
-          telemetry_csv.writerow(
-            [
-              out.frame_idx,
-              out.timestamp,
-              out.filtered.vehicle_count,
-              out.filtered.occupancy_ratio,
-              *[float(v) for v in out.features],
-            ]
-          )
+          row = [
+            out.frame_idx,
+            out.timestamp,
+            out.filtered.vehicle_count,
+            out.filtered.occupancy_ratio,
+            *[float(v) for v in out.features],
+          ]
+          if self.mode == "predict":
+            n_feat = len(FEATURE_NAMES)
+            if out.prediction is not None and out.prediction.predicted_density is not None:
+              preds = out.prediction.predicted_density  # (horizon, F_out)
+              row.append(float(out.prediction.current_density))
+              for h in range(self.horizon):
+                if h < preds.shape[0]:
+                  row.extend(float(v) for v in preds[h, :n_feat])
+                else:
+                  row.extend([""] * n_feat)
+            else:
+              # Warm-up frames before input_len history is available.
+              row.extend([""] * (1 + self.horizon * n_feat))
+          telemetry_csv.writerow(row)
+          telemetry_file.flush()
 
         self.fps_controller.tick()
 
@@ -366,10 +405,15 @@ class InferenceOrchestrator:
         f"estimator.name must be one of {sorted(_ESTIMATOR_REGISTRY)}, got {name!r}"
       )
     cls = _ESTIMATOR_REGISTRY[name]
-    model = cls(est_cfg)
     ckpt = est_cfg.get("checkpoint")
-    if ckpt:
-      state = torch.load(ckpt, map_location=self.device)
+    state = torch.load(ckpt, map_location=self.device) if ckpt else None
+    # Prefer architectural hyperparams from the checkpoint (hidden_size,
+    # num_layers, dropout, ...) so we don't have to pass them through the CLI.
+    model_cfg = dict(est_cfg)
+    if isinstance(state, dict) and isinstance(state.get("config"), dict):
+      model_cfg.update(state["config"])
+    model = cls(model_cfg)
+    if state is not None:
       model.load_state_dict(state.get("model_state_dict", state))
       logger.info("Loaded {} estimator from {}", name, ckpt)
     model.to(self.device)

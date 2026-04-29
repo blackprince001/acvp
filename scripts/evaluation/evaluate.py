@@ -11,12 +11,11 @@ Bench all trained models on the test split::
 
     uv run python scripts/evaluate.py
 
-Bench a subset, smaller image size, log to TensorBoard::
+Bench a subset, smaller image size::
 
     uv run python scripts/evaluate.py \\
         --models yolov8n yolov8s yolov11m \\
-        --image-size 480 \\
-        --tensorboard experiments/tb/bench-2026-04-26
+        --image-size 480
 
 Skip the latency loop (faster sanity run)::
 
@@ -29,7 +28,7 @@ import argparse
 import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
   sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -78,28 +77,10 @@ def parse_args() -> argparse.Namespace:
                       "the test split (mAP still uses the test split).")
   p.add_argument("--latency-video-stride", type=int, default=1,
                  help="Decode every Nth frame from --latency-video (default 1).")
-  p.add_argument("--tensorboard", type=Path, default=None,
-                 help="TensorBoard log dir. If unset, no TB logging.")
-  p.add_argument("--wandb-project", default=None)
-  p.add_argument("--wandb-run", default=None)
-  p.add_argument("--wandb-mode", default="online", choices=["online", "offline", "disabled"])
   p.add_argument("--no-figures", action="store_true",
                  help="Skip figure rendering after the bench.")
   p.add_argument("--log-level", default="INFO")
   return p.parse_args()
-
-
-def build_tracker(args: argparse.Namespace) -> ExperimentTracker:
-  cfg: dict = {}
-  if args.tensorboard:
-    cfg["tensorboard"] = {"log_dir": str(args.tensorboard)}
-  if args.wandb_project:
-    cfg["wandb"] = {
-      "project": args.wandb_project,
-      "run_name": args.wandb_run,
-      "mode": args.wandb_mode,
-    }
-  return ExperimentTracker.from_config(cfg)
 
 
 def main() -> int:
@@ -145,7 +126,7 @@ def main() -> int:
     latency_video=args.latency_video,
     latency_video_stride=args.latency_video_stride,
   )
-  tracker = build_tracker(args)
+  tracker = ExperimentTracker.from_config({})
   tracker.log_params(
     {
       "split": args.split,

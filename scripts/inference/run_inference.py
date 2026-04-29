@@ -40,7 +40,7 @@ import argparse
 import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
   sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -67,6 +67,12 @@ def parse_args() -> argparse.Namespace:
   p.add_argument("--device", default=None, help="Compute device (cuda/cpu/mps).")
   p.add_argument("--target-fps", type=float, default=None, help="Target output FPS.")
   p.add_argument("--max-frames", type=int, default=None, help="Stop after N frames.")
+  p.add_argument(
+    "--duration",
+    type=float,
+    default=None,
+    help="Stop after N seconds of wall-clock processing (useful for live streams).",
+  )
 
   p.add_argument("--tracker", default="botsort", choices=["botsort", "bytetrack"])
   p.add_argument("--road-mask", default=None, help="Static road mask (.npy or image).")
@@ -136,12 +142,17 @@ def main() -> int:
   logger.info("Config: {}", cfg)
 
   orchestrator = InferenceOrchestrator(cfg)
-  outputs = orchestrator.run(
-    video_source=args.video,
-    output_path=args.output,
-    telemetry_path=args.telemetry,
-    max_frames=args.max_frames,
-  )
+  try:
+    outputs = orchestrator.run(
+      video_source=args.video,
+      output_path=args.output,
+      telemetry_path=args.telemetry,
+      max_frames=args.max_frames,
+      duration_s=args.duration,
+    )
+  except KeyboardInterrupt:
+    logger.warning("Interrupted; telemetry/video have been flushed and closed.")
+    return 130
   logger.info("Processed {} frames", len(outputs))
   return 0
 

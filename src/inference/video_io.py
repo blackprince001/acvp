@@ -15,16 +15,32 @@ from src.utils.types import FilteredResult, PredictionResult, TrackingResult
 class VideoReader:
   """Iterate frames from a video file or image directory."""
 
-  def __init__(self, source: str | Path):
-    self.source = Path(source)
-    if not self.source.exists():
-      raise FileNotFoundError(f"Video source not found: {self.source}")
+  _URL_SCHEMES = ("http://", "https://", "rtsp://", "rtmp://", "udp://", "tcp://")
 
-    self._is_dir = self.source.is_dir()
+  def __init__(self, source: str | Path):
+    source_str = str(source)
+    self._is_url = source_str.startswith(self._URL_SCHEMES)
+
+    if self._is_url:
+      self.source = source_str  # type: ignore[assignment]
+    else:
+      self.source = Path(source)
+      if not self.source.exists():
+        raise FileNotFoundError(f"Video source not found: {self.source}")
+
+    self._is_dir = (not self._is_url) and self.source.is_dir()
     self._cap: cv2.VideoCapture | None = None
     self._images: list[Path] = []
 
-    if self._is_dir:
+    if self._is_url:
+      self._cap = cv2.VideoCapture(source_str)
+      if not self._cap.isOpened():
+        raise RuntimeError(f"Could not open stream: {source_str}")
+      self._fps = self._cap.get(cv2.CAP_PROP_FPS) or 30.0
+      self._width = int(self._cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+      self._height = int(self._cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+      self._frame_count = 0  # unknown for live streams
+    elif self._is_dir:
       self._images = sorted(
         p
         for p in self.source.iterdir()
@@ -45,13 +61,15 @@ class VideoReader:
       self._height = int(self._cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
       self._frame_count = int(self._cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
+    name = self.source if self._is_url else self.source.name
     logger.info(
-      "VideoReader: {} | {}x{} @ {:.1f} fps | {} frames",
-      self.source.name,
+      "VideoReader: {} | {}x{} @ {:.1f} fps | {} frames{}",
+      name,
       self._width,
       self._height,
       self._fps,
       self._frame_count,
+      " (live)" if self._is_url else "",
     )
 
   @property
